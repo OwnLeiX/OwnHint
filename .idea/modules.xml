@@ -2,8 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Hint.iml" filepath="$PROJECT_DIR$/Hint.iml" />
-      <module fileurl="file://$PROJECT_DIR$/OwnHint/OwnHint.iml" filepath="$PROJECT_DIR$/OwnHint/OwnHint.iml" />
+      <module fileurl="file://$PROJECT_DIR$/OwnHint.iml" filepath="$PROJECT_DIR$/OwnHint.iml" />
+      <module fileurl="file://$PROJECT_DIR$/OwnHint/OwnHint-OwnHint.iml" filepath="$PROJECT_DIR$/OwnHint/OwnHint-OwnHint.iml" />
+      <module fileurl="file://$PROJECT_DIR$/example/example.iml" filepath="$PROJECT_DIR$/example/example.iml" />
     </modules>
   </component>
 </project>
