@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.os.Build;
 import android.os.Looper;
+import android.support.annotation.AnyThread;
 import android.support.annotation.ColorInt;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
@@ -77,7 +78,6 @@ final public class ImmersiveHint {
                 ((ViewGroup.MarginLayoutParams) layoutParams).topMargin += statusBarHeight;
             }
         }
-
     }
 
     private static int getStatusBarHeight(Context context) {
@@ -107,7 +107,6 @@ final public class ImmersiveHint {
                     fallback = (ViewGroup) view;
                 }
             }
-
             if (view != null) {
                 final ViewParent parent = view.getParent();
                 view = parent instanceof View ? (View) parent : null;
@@ -116,10 +115,12 @@ final public class ImmersiveHint {
         return fallback;
     }
 
+    @AnyThread
     public void show() {
         show(mType.config.showDuration);
     }
 
+    @AnyThread
     private void show(final long duration) {
         if (Looper.myLooper() == Looper.getMainLooper()) {
             ImmersiveHintManager.$().enqueue(mOperate, duration, mPriority);
@@ -133,10 +134,12 @@ final public class ImmersiveHint {
         }
     }
 
+    @AnyThread
     public void dismiss() {
         dismiss(ImmersiveHintConfig.DismissReason.REASON_CODES);
     }
 
+    @AnyThread
     private void dismiss(final int reason) {
         if (Looper.myLooper() == Looper.getMainLooper()) {
             ImmersiveHintManager.$().cancel(mOperate, reason);
