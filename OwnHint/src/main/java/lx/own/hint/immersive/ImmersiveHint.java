@@ -143,8 +143,9 @@ final public class ImmersiveHint {
         return this;
     }
 
-    public void withIcon(boolean show) {
+    public ImmersiveHint withIcon(boolean show) {
         mView.mIconView.setVisibility(show ? View.VISIBLE : View.GONE);
+        return this;
     }
 
     public ImmersiveHint customIconSize(int radius) {

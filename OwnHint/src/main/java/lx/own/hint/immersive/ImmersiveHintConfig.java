@@ -28,6 +28,8 @@ public interface ImmersiveHintConfig {
         @DrawableRes
         static int iconResId = -1;
         static int iconSize = 20;
+        static int iconRightMargin = 10;
+        static boolean showIcon = false;
         //message
         @ColorInt
         static int messageTextColor = 0xFFFFFFFF;
@@ -39,6 +41,7 @@ public interface ImmersiveHintConfig {
         static int actionBackgroundResId = -1;
         static int actionTextSize = 20;
         static int actionPaddingEndsHorizontal = 10;
+        static int actionLeftMargin = 100;
         //root
         @ColorInt
         static int hintBackgroundColor = 0xFF00FF00;
@@ -53,12 +56,16 @@ public interface ImmersiveHintConfig {
         static void update(@NonNull DefaultConfig defaultConfig) {
             DefaultParams.iconResId = defaultConfig.iconResId;
             DefaultParams.iconSize = defaultConfig.iconSize;
+            DefaultParams.iconRightMargin = defaultConfig.iconRightMargin;
+            DefaultParams.showIcon = defaultConfig.showIcon;
+            DefaultParams.iconSize = defaultConfig.iconSize;
             DefaultParams.messageTextColor = defaultConfig.messageTextColor;
             DefaultParams.messageTextSize = defaultConfig.messageTextSize;
             DefaultParams.actionTextColor = defaultConfig.actionTextColor;
             DefaultParams.actionBackgroundResId = defaultConfig.actionBackgroundResId;
             DefaultParams.actionTextSize = defaultConfig.actionTextSize;
             DefaultParams.actionPaddingEndsHorizontal = defaultConfig.actionPaddingEndsHorizontal;
+            DefaultParams.actionLeftMargin = defaultConfig.actionLeftMargin;
             DefaultParams.hintBackgroundColor = defaultConfig.hintBackgroundColor;
             DefaultParams.warningBackgroundColor = defaultConfig.warningBackgroundColor;
             DefaultParams.paddingEndsHorizontal = defaultConfig.paddingEndsHorizontal;

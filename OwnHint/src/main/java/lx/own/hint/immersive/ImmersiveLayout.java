@@ -71,13 +71,15 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
         iconView.setScaleType(ImageView.ScaleType.FIT_CENTER);
         final int iconSize = ImmersiveHintConfig.DefaultParams.iconSize;
         final int drawableId = ImmersiveHintConfig.DefaultParams.iconResId;
-        if (drawableId != -1) {
+        final int iconRightMargin = ImmersiveHintConfig.DefaultParams.iconRightMargin;
+        final boolean showIcon = ImmersiveHintConfig.DefaultParams.showIcon;
+        if (drawableId != -1)
             iconView.setImageResource(drawableId);
-        } else {
-            iconView.setVisibility(GONE);
-        }
-        LayoutParams messageParams = new LayoutParams(iconSize, iconSize);
-        iconView.setLayoutParams(messageParams);
+        iconView.setVisibility(showIcon ? VISIBLE : GONE);
+        LayoutParams params = new LayoutParams(iconSize, iconSize);
+        params.gravity = Gravity.CENTER_VERTICAL;
+        params.rightMargin = iconRightMargin;
+        iconView.setLayoutParams(params);
         return iconView;
     }
 
@@ -85,9 +87,10 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
         TextView textView = new TextView(context);
         final int messageTextColor = ImmersiveHintConfig.DefaultParams.messageTextColor;
         final int messageTextSize = ImmersiveHintConfig.DefaultParams.messageTextSize;
-        LayoutParams messageParams = new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT);
-        messageParams.weight = 1;
-        textView.setLayoutParams(messageParams);
+        LayoutParams params = new LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.gravity = Gravity.CENTER_VERTICAL;
+        params.weight = 1;
+        textView.setLayoutParams(params);
 
         textView.setTextSize(messageTextSize);
         textView.setTextColor(messageTextColor);
@@ -103,8 +106,11 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
         final int actionTextColor = ImmersiveHintConfig.DefaultParams.actionTextColor;
         final int actionTextPaddingEnds = ImmersiveHintConfig.DefaultParams.actionPaddingEndsHorizontal;
         final int actionTextBackgroundResId = ImmersiveHintConfig.DefaultParams.actionBackgroundResId;
-        LayoutParams messageParams = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        textView.setLayoutParams(messageParams);
+        final int actionLeftMargin = ImmersiveHintConfig.DefaultParams.actionLeftMargin;
+        LayoutParams params = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.gravity = Gravity.CENTER_VERTICAL;
+        params.leftMargin = actionLeftMargin;
+        textView.setLayoutParams(params);
 
         textView.setTextSize(actionTextSize);
         textView.setTextColor(actionTextColor);

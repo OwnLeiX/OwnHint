@@ -15,6 +15,8 @@ public class DefaultConfig {
     @DrawableRes
     int iconResId = -1;
     int iconSize = 20;
+    int iconRightMargin = 10;
+    boolean showIcon = false;
     //message
     @ColorInt
     int messageTextColor = 0xFFFFFFFF;
@@ -26,6 +28,7 @@ public class DefaultConfig {
     int actionBackgroundResId = -1;
     int actionTextSize = 20;
     int actionPaddingEndsHorizontal = 10;
+    int actionLeftMargin = 100;
     //root
     @ColorInt
     int hintBackgroundColor = 0xFF00FF00;
@@ -104,6 +107,21 @@ public class DefaultConfig {
 
     public DefaultConfig setAnimDuration(long animDuration) {
         this.animDuration = animDuration;
+        return this;
+    }
+
+    public DefaultConfig setIconRightMargin(int iconRightMargin) {
+        this.iconRightMargin = iconRightMargin;
+        return this;
+    }
+
+    public DefaultConfig setShowIcon(boolean showIcon) {
+        this.showIcon = showIcon;
+        return this;
+    }
+
+    public DefaultConfig setActionLeftMargin(int actionLeftMargin) {
+        this.actionLeftMargin = actionLeftMargin;
         return this;
     }
 }

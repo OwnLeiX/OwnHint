@@ -24,7 +24,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.p0:
-                ImmersiveHint.make(this, 0, "this is 0", ImmersiveHintConfig.Type.Hint).show();
+                ImmersiveHint.make(this, 0, "this is 0 asdasdasdasdasdasdasdasdasdasdasdasdasdasdas", "action", ImmersiveHintConfig.Type.Hint, null).withIcon(true).customIconSize(100).customIconDrawable(R.mipmap.ic_launcher_round).show();
                 break;
             case R.id.p100:
                 ImmersiveHint.make(this, 100, "this is 100", ImmersiveHintConfig.Type.Hint).show();
