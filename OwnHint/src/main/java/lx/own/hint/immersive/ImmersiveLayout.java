@@ -25,8 +25,8 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
     private OnLayoutChangedListener mLayoutChangedListener;
     private OnDetachedListener mDetachedListener;
     private HintAction mAction;
-    private ImageView mIconView;
-    private TextView mMessageView, mActionView;
+    ImageView mIconView;
+    TextView mMessageView, mActionView;
 
     public void setOnLayoutChangedListener(OnLayoutChangedListener listener) {
         this.mLayoutChangedListener = listener;
@@ -50,8 +50,8 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
     }
 
     private void buildContent(Context context, AttributeSet attrs, int defStyleAttr) {
-        final int paddingEndsHorizontal = ImmersiveHintConfig.Params.paddingEndsHorizontal;
-        final int paddingEndsVertical = ImmersiveHintConfig.Params.paddingEndsVertical;
+        final int paddingEndsHorizontal = ImmersiveHintConfig.DefaultParams.paddingEndsHorizontal;
+        final int paddingEndsVertical = ImmersiveHintConfig.DefaultParams.paddingEndsVertical;
         setPadding(paddingEndsHorizontal, paddingEndsVertical, paddingEndsHorizontal, paddingEndsVertical);
         mIconView = buildIconView(context, attrs, defStyleAttr);
         mMessageView = buildMessageView(context, attrs, defStyleAttr);
@@ -69,8 +69,8 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
     private ImageView buildIconView(Context context, AttributeSet attrs, int defStyleAttr) {
         ImageView iconView = new ImageView(context);
         iconView.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        final int iconSize = ImmersiveHintConfig.Params.iconSize;
-        final int drawableId = ImmersiveHintConfig.Params.iconResId;
+        final int iconSize = ImmersiveHintConfig.DefaultParams.iconSize;
+        final int drawableId = ImmersiveHintConfig.DefaultParams.iconResId;
         if (drawableId != -1) {
             iconView.setImageResource(drawableId);
         } else {
@@ -83,8 +83,8 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
 
     private TextView buildMessageView(Context context, AttributeSet attrs, int defStyleAttr) {
         TextView textView = new TextView(context);
-        final int messageTextColor = ImmersiveHintConfig.Params.messageTextColor;
-        final int messageTextSize = ImmersiveHintConfig.Params.messageTextSize;
+        final int messageTextColor = ImmersiveHintConfig.DefaultParams.messageTextColor;
+        final int messageTextSize = ImmersiveHintConfig.DefaultParams.messageTextSize;
         LayoutParams messageParams = new LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT);
         messageParams.weight = 1;
         textView.setLayoutParams(messageParams);
@@ -99,10 +99,10 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
 
     private TextView buildActionView(Context context, AttributeSet attrs, int defStyleAttr) {
         TextView textView = new TextView(context);
-        final int actionTextSize = ImmersiveHintConfig.Params.actionTextSize;
-        final int actionTextColor = ImmersiveHintConfig.Params.actionTextColor;
-        final int actionTextPaddingEnds = ImmersiveHintConfig.Params.actionPaddingEndsHorizontal;
-        final int actionTextBackgroundResId = ImmersiveHintConfig.Params.actionBackgroundResId;
+        final int actionTextSize = ImmersiveHintConfig.DefaultParams.actionTextSize;
+        final int actionTextColor = ImmersiveHintConfig.DefaultParams.actionTextColor;
+        final int actionTextPaddingEnds = ImmersiveHintConfig.DefaultParams.actionPaddingEndsHorizontal;
+        final int actionTextBackgroundResId = ImmersiveHintConfig.DefaultParams.actionBackgroundResId;
         LayoutParams messageParams = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
         textView.setLayoutParams(messageParams);
 
@@ -135,13 +135,13 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
         int backgroundColor = 0;
         switch (type) {
             case Hint:
-                backgroundColor = ImmersiveHintConfig.Params.hintBackgroundColor;
+                backgroundColor = ImmersiveHintConfig.DefaultParams.hintBackgroundColor;
                 break;
             case Warning:
-                backgroundColor = ImmersiveHintConfig.Params.warningBackgroundColor;
+                backgroundColor = ImmersiveHintConfig.DefaultParams.warningBackgroundColor;
                 break;
             default:
-                backgroundColor = ImmersiveHintConfig.Params.hintBackgroundColor;
+                backgroundColor = ImmersiveHintConfig.DefaultParams.hintBackgroundColor;
                 break;
         }
         setBackgroundColor(backgroundColor);

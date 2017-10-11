@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
 import android.os.Build;
+import android.support.annotation.ColorInt;
+import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
@@ -44,12 +46,20 @@ final public class ImmersiveHint {
         }
     };
 
-    public static ImmersiveHint make(@NonNull Activity activity, @NonNull String message, ImmersiveHintConfig.Type type) {
-        return make(activity, 0, message, "", type, null);
+    public static ImmersiveHint make(@NonNull Activity activity, @StringRes int messageRes, ImmersiveHintConfig.Type type) {
+        return make(activity, 0, messageRes, type);
     }
 
-    public static ImmersiveHint make(@NonNull Activity activity, @StringRes int messageRes, ImmersiveHintConfig.Type type) {
-        return make(activity, 0, messageRes, -1, type, null);
+    public static ImmersiveHint make(@NonNull Activity activity, @NonNull String message, ImmersiveHintConfig.Type type) {
+        return make(activity, 0, message, type);
+    }
+
+    public static ImmersiveHint make(@NonNull Activity activity, int priority, @StringRes int messageRes, ImmersiveHintConfig.Type type) {
+        return make(activity, priority, messageRes, -1, type, null);
+    }
+
+    public static ImmersiveHint make(@NonNull Activity activity, int priority, @NonNull String message, ImmersiveHintConfig.Type type) {
+        return make(activity, priority, message, "", type, null);
     }
 
     public static ImmersiveHint make(@NonNull Activity activity, int priority, @StringRes int messageRes, @StringRes int actionRes, ImmersiveHintConfig.Type type, HintAction action) {
@@ -113,7 +123,7 @@ final public class ImmersiveHint {
     }
 
     public void show() {
-        show(ImmersiveHintConfig.Params.duration);
+        show(ImmersiveHintConfig.DefaultParams.showDuration);
     }
 
     private void show(long duration) {
@@ -121,11 +131,63 @@ final public class ImmersiveHint {
     }
 
     public void dismiss() {
-        dismiss(ImmersiveHintManager.REASON_CODES);
+        dismiss(ImmersiveHintConfig.DismissReason.REASON_CODES);
     }
 
     private void dismiss(int reason) {
         ImmersiveHintManager.$().cancel(mOperate, reason);
+    }
+
+    public ImmersiveHint customIconDrawable(@DrawableRes int resId) {
+        mView.mIconView.setImageResource(resId);
+        return this;
+    }
+
+    public void withIcon(boolean show) {
+        mView.mIconView.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+
+    public ImmersiveHint customIconSize(int radius) {
+        ViewGroup.LayoutParams params = mView.mIconView.getLayoutParams();
+        params.width = radius;
+        params.height = radius;
+        mView.mIconView.setLayoutParams(params);
+        return this;
+    }
+
+    public ImmersiveHint customBackgroundColor(@ColorInt int color) {
+        mView.setBackgroundColor(color);
+        return this;
+    }
+
+    public ImmersiveHint customBackgroundDrawable(@DrawableRes int resId) {
+        mView.setBackgroundResource(resId);
+        return this;
+    }
+
+    public ImmersiveHint customMessageTextSize(int size) {
+        mView.mMessageView.setTextSize(size);
+        return this;
+    }
+
+    public ImmersiveHint customMessageTextColor(@ColorInt int color) {
+        mView.mMessageView.setTextColor(color);
+        return this;
+    }
+
+    public ImmersiveHint customActionTextSize(int size) {
+        mView.mActionView.setTextSize(size);
+        return this;
+    }
+
+    public ImmersiveHint customActionTextColor(@ColorInt int color) {
+        mView.mActionView.setTextColor(color);
+        return this;
+    }
+
+    public ImmersiveHint customActionBackgroundDrawable(@DrawableRes int resId) {
+        mView.mActionView.setBackgroundResource(resId);
+        return this;
     }
 
     private ImmersiveHint(@NonNull Activity activity, int priority, @NonNull String message, @Nullable String actionText, ImmersiveHintConfig.Type type, HintAction action) {
@@ -177,7 +239,7 @@ final public class ImmersiveHint {
                 Animation.RELATIVE_TO_SELF, 0f,
                 Animation.RELATIVE_TO_SELF, -1.0f,
                 Animation.RELATIVE_TO_SELF, 0f);
-        anim.setDuration(ImmersiveHintConfig.Params.animDuration);
+        anim.setDuration(ImmersiveHintConfig.DefaultParams.animDuration);
         anim.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationEnd(Animation animation) {
@@ -201,7 +263,7 @@ final public class ImmersiveHint {
                 Animation.RELATIVE_TO_SELF, 0f,
                 Animation.RELATIVE_TO_SELF, 0f,
                 Animation.RELATIVE_TO_SELF, -1.0f);
-        anim.setDuration(ImmersiveHintConfig.Params.animDuration);
+        anim.setDuration(ImmersiveHintConfig.DefaultParams.animDuration);
         anim.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationEnd(Animation animation) {

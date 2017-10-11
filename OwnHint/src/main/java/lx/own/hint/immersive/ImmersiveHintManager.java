@@ -6,7 +6,6 @@ import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import java.lang.ref.WeakReference;
 import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -20,11 +19,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class ImmersiveHintManager {
 
     private static ImmersiveHintManager mInstance;
-
-    static int REASON_TIMEOUT = 1;
-    static int REASON_REPLACE = 2;
-    static int REASON_ACTION = 3;
-    static int REASON_CODES = 4;
 
     public static ImmersiveHintManager $() {
         if (mInstance == null) {
@@ -45,7 +39,7 @@ public class ImmersiveHintManager {
             @Override
             public void handleMessage(Message msg) {
                 try {
-                    if (msg.what == REASON_TIMEOUT)
+                    if (msg.what == ImmersiveHintConfig.DismissReason.REASON_TIMEOUT)
                         processOperateTimeout((OperateRecorder) msg.obj);
                 } catch (ClassCastException e) {
 
@@ -55,8 +49,8 @@ public class ImmersiveHintManager {
         mRecorders = new LinkedBlockingQueue<>();
     }
 
-    public void init(@NonNull CustomConfig config) {
-        ImmersiveHintConfig.Params.update(config);
+    public void init(@NonNull DefaultConfig config) {
+        ImmersiveHintConfig.DefaultParams.update(config);
     }
 
     void enqueue(@NonNull OperateInterface operate, long duration, int priority) {
@@ -68,7 +62,7 @@ public class ImmersiveHintManager {
         } else {
             final OperateRecorder next = new OperateRecorder(operate, duration, priority);
             if (mCurrentRecorder != null) {
-                if (mCurrentRecorder.priority >= priority || cancelOperate(mCurrentRecorder, REASON_REPLACE)) {
+                if (mCurrentRecorder.priority >= priority || cancelOperate(mCurrentRecorder, ImmersiveHintConfig.DismissReason.REASON_REPLACE)) {
                     mRecorders.offer(next);
                 } else {
                     orderOperate(next);
@@ -82,6 +76,7 @@ public class ImmersiveHintManager {
     void cancel(@NonNull OperateInterface operate, int reason) {
         if (isCurrent(operate)) {
             cancelOperate(mCurrentRecorder, reason);
+            mCurrentRecorder = null;
         } else {
             Iterator<OperateRecorder> iterator = mRecorders.iterator();
             while (iterator.hasNext()) {
@@ -113,19 +108,22 @@ public class ImmersiveHintManager {
     private boolean orderOperate(@NonNull OperateRecorder recorder) {
         boolean returnValue = false;
         mCurrentRecorder = recorder;
-        OperateInterface operate = recorder.operate.get();
+        OperateInterface operate = recorder.operate;
         if (operate != null) {
             operate.show();
             returnValue = true;
         } else {
             mCurrentRecorder = null;
+            final OperateRecorder next = mRecorders.poll();
+            if (next != null)
+                orderOperate(next);
         }
         return returnValue;
     }
 
     private boolean cancelOperate(@NonNull OperateRecorder recorder, int reason) {
         boolean returnValue = false;
-        OperateInterface operate = recorder.operate.get();
+        OperateInterface operate = recorder.operate;
         if (operate != null) {
             mHandler.removeCallbacksAndMessages(recorder);
             operate.dismiss(reason);
@@ -135,16 +133,16 @@ public class ImmersiveHintManager {
     }
 
     private void scheduleOperateTimeout(@NonNull OperateRecorder recorder) {
-        long delay = recorder.duration <= 0 ? ImmersiveHintConfig.Params.duration : recorder.duration;
+        long delay = recorder.duration <= 0 ? ImmersiveHintConfig.DefaultParams.showDuration : recorder.duration;
         if (delay <= 0)
             delay = 100;
         mHandler.removeCallbacksAndMessages(recorder);
-        mHandler.sendMessageDelayed(Message.obtain(mHandler, REASON_TIMEOUT, recorder), delay);
+        mHandler.sendMessageDelayed(Message.obtain(mHandler, ImmersiveHintConfig.DismissReason.REASON_TIMEOUT, recorder), delay);
     }
 
     private void processOperateTimeout(@NonNull OperateRecorder recorder) {
         mHandler.removeCallbacksAndMessages(recorder);
-        cancelOperate(recorder, REASON_TIMEOUT);
+        cancelOperate(recorder, ImmersiveHintConfig.DismissReason.REASON_TIMEOUT);
     }
 
     private boolean isCurrent(@Nullable OperateInterface operate) {
@@ -152,19 +150,18 @@ public class ImmersiveHintManager {
     }
 
     private class OperateRecorder {
-        private final WeakReference<OperateInterface> operate;
+        private final OperateInterface operate;
         private int priority;
         private long duration;
 
         public OperateRecorder(@NonNull OperateInterface operate, long duration, int priority) {
-            this.operate = new WeakReference<>(operate);
+            this.operate = operate;
             this.duration = duration;
             this.priority = priority;
         }
 
         public boolean is(@Nullable OperateInterface operate) {
-            OperateInterface self = this.operate.get();
-            return self != null && self == operate;
+            return this.operate == operate;
         }
     }
 

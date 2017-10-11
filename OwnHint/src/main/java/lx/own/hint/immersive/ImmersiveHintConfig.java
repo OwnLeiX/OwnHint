@@ -11,12 +11,19 @@ import android.support.annotation.NonNull;
  *         Created on 2017/10/11.
  */
 
-interface ImmersiveHintConfig {
+public interface ImmersiveHintConfig {
     enum Type {
         Warning, Hint
     }
 
-    class Params {
+    interface DismissReason{
+        int REASON_TIMEOUT = 1;
+        int REASON_REPLACE = 2;
+        int REASON_ACTION = 3;
+        int REASON_CODES = 4;
+    }
+
+    class DefaultParams {
         //icon
         @DrawableRes
         static int iconResId = -1;
@@ -40,24 +47,24 @@ interface ImmersiveHintConfig {
         static int paddingEndsHorizontal = 10;
         static int paddingEndsVertical = 10;
         //other
-        static long duration = 5000L;
+        static long showDuration = 5000L;
         static long animDuration = 500L;
 
-        static void update(@NonNull CustomConfig customConfig) {
-            Params.iconResId = customConfig.iconResId;
-            Params.iconSize = customConfig.iconSize;
-            Params.messageTextColor = customConfig.messageTextColor;
-            Params.messageTextSize = customConfig.messageTextSize;
-            Params.actionTextColor = customConfig.actionTextColor;
-            Params.actionBackgroundResId = customConfig.actionBackgroundResId;
-            Params.actionTextSize = customConfig.actionTextSize;
-            Params.actionPaddingEndsHorizontal = customConfig.actionPaddingEndsHorizontal;
-            Params.hintBackgroundColor = customConfig.hintBackgroundColor;
-            Params.warningBackgroundColor = customConfig.warningBackgroundColor;
-            Params.paddingEndsHorizontal = customConfig.paddingEndsHorizontal;
-            Params.paddingEndsVertical = customConfig.paddingEndsVertical;
-            Params.duration = customConfig.duration;
-            Params.animDuration = customConfig.animDuration;
+        static void update(@NonNull DefaultConfig defaultConfig) {
+            DefaultParams.iconResId = defaultConfig.iconResId;
+            DefaultParams.iconSize = defaultConfig.iconSize;
+            DefaultParams.messageTextColor = defaultConfig.messageTextColor;
+            DefaultParams.messageTextSize = defaultConfig.messageTextSize;
+            DefaultParams.actionTextColor = defaultConfig.actionTextColor;
+            DefaultParams.actionBackgroundResId = defaultConfig.actionBackgroundResId;
+            DefaultParams.actionTextSize = defaultConfig.actionTextSize;
+            DefaultParams.actionPaddingEndsHorizontal = defaultConfig.actionPaddingEndsHorizontal;
+            DefaultParams.hintBackgroundColor = defaultConfig.hintBackgroundColor;
+            DefaultParams.warningBackgroundColor = defaultConfig.warningBackgroundColor;
+            DefaultParams.paddingEndsHorizontal = defaultConfig.paddingEndsHorizontal;
+            DefaultParams.paddingEndsVertical = defaultConfig.paddingEndsVertical;
+            DefaultParams.showDuration = defaultConfig.showDuration;
+            DefaultParams.animDuration = defaultConfig.animDuration;
         }
     }
 }
