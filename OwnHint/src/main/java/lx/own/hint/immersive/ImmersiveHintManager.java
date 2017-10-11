@@ -68,14 +68,10 @@ public class ImmersiveHintManager {
         } else {
             final OperateRecorder next = new OperateRecorder(operate, duration, priority);
             if (mCurrentRecorder != null) {
-                if (mCurrentRecorder.priority < priority) {
-                    if (cancelOperate(mCurrentRecorder, REASON_REPLACE)) {
-                        mRecorders.offer(next);
-                    } else {
-                        orderOperate(next);
-                    }
-                } else {
+                if (mCurrentRecorder.priority >= priority || cancelOperate(mCurrentRecorder, REASON_REPLACE)) {
                     mRecorders.offer(next);
+                } else {
+                    orderOperate(next);
                 }
             } else {
                 orderOperate(next);
