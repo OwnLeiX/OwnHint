@@ -23,12 +23,17 @@ import android.widget.TextView;
 final public class ImmersiveLayout extends LinearLayout implements View.OnClickListener {
 
     private OnLayoutChangedListener mLayoutChangedListener;
+    private OnDetachedListener mDetachedListener;
     private HintAction mAction;
     private ImageView mIconView;
     private TextView mMessageView, mActionView;
 
     public void setOnLayoutChangedListener(OnLayoutChangedListener listener) {
         this.mLayoutChangedListener = listener;
+    }
+
+    public void setDetachedListener(OnDetachedListener listener) {
+        this.mDetachedListener = listener;
     }
 
     public ImmersiveLayout(Context context) {
@@ -119,6 +124,13 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
             mLayoutChangedListener.onLayoutChanged(this, l, t, r, b);
     }
 
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        if (mDetachedListener != null)
+            mDetachedListener.onDetachedFromWindow(this);
+    }
+
     void adaptContent(@NonNull ImmersiveHintConfig.Type type, @Nullable String message, @Nullable String actionText, @Nullable HintAction action) {
         int backgroundColor = 0;
         switch (type) {
@@ -153,5 +165,9 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
 
     interface OnLayoutChangedListener {
         void onLayoutChanged(View view, int l, int t, int r, int b);
+    }
+
+    interface OnDetachedListener {
+        void onDetachedFromWindow(View view);
     }
 }

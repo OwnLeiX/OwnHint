@@ -46,7 +46,7 @@ public class ImmersiveHintManager {
             public void handleMessage(Message msg) {
                 try {
                     if (msg.what == REASON_TIMEOUT)
-                        processTimeoutOperate((OperateRecorder) msg.obj);
+                        processOperateTimeout((OperateRecorder) msg.obj);
                 } catch (ClassCastException e) {
 
                 }
@@ -59,23 +59,31 @@ public class ImmersiveHintManager {
         ImmersiveHintConfig.Params.update(config);
     }
 
-    void enqueue(@NonNull OperateInterface operate, long duration) {
+    void enqueue(@NonNull OperateInterface operate, long duration, int priority) {
         if (isCurrent(operate)) {
             mHandler.removeCallbacksAndMessages(mCurrentRecorder);
             mCurrentRecorder.duration = duration;
-            scheduleTimeoutOperate(mCurrentRecorder);
+            mCurrentRecorder.priority = priority;
+            scheduleOperateTimeout(mCurrentRecorder);
         } else {
-            final OperateRecorder next = new OperateRecorder(operate, duration);
-            if (mCurrentRecorder != null && cancelOperate(mCurrentRecorder, REASON_REPLACE)) {
-                mRecorders.offer(next);
-                return;
+            final OperateRecorder next = new OperateRecorder(operate, duration, priority);
+            if (mCurrentRecorder != null) {
+                if (mCurrentRecorder.priority < priority) {
+                    if (cancelOperate(mCurrentRecorder, REASON_REPLACE)) {
+                        mRecorders.offer(next);
+                    } else {
+                        orderOperate(next);
+                    }
+                } else {
+                    mRecorders.offer(next);
+                }
             } else {
                 orderOperate(next);
             }
         }
     }
 
-    void dismiss(@NonNull OperateInterface operate, int reason) {
+    void cancel(@NonNull OperateInterface operate, int reason) {
         if (isCurrent(operate)) {
             cancelOperate(mCurrentRecorder, reason);
         } else {
@@ -91,13 +99,13 @@ public class ImmersiveHintManager {
         }
     }
 
-    void onShown(@NonNull OperateInterface operate) {
+    void processOperateShown(@NonNull OperateInterface operate) {
         if (isCurrent(operate)) {
-            scheduleTimeoutOperate(mCurrentRecorder);
+            scheduleOperateTimeout(mCurrentRecorder);
         }
     }
 
-    void onDismissed(@NonNull OperateInterface operate) {
+    void processOperateHidden(@NonNull OperateInterface operate) {
         if (isCurrent(operate)) {
             mCurrentRecorder = null;
             final OperateRecorder next = mRecorders.poll();
@@ -130,7 +138,7 @@ public class ImmersiveHintManager {
         return returnValue;
     }
 
-    private void scheduleTimeoutOperate(@NonNull OperateRecorder recorder) {
+    private void scheduleOperateTimeout(@NonNull OperateRecorder recorder) {
         long delay = recorder.duration <= 0 ? ImmersiveHintConfig.Params.duration : recorder.duration;
         if (delay <= 0)
             delay = 100;
@@ -138,7 +146,7 @@ public class ImmersiveHintManager {
         mHandler.sendMessageDelayed(Message.obtain(mHandler, REASON_TIMEOUT, recorder), delay);
     }
 
-    private void processTimeoutOperate(@NonNull OperateRecorder recorder) {
+    private void processOperateTimeout(@NonNull OperateRecorder recorder) {
         mHandler.removeCallbacksAndMessages(recorder);
         cancelOperate(recorder, REASON_TIMEOUT);
     }
@@ -149,11 +157,13 @@ public class ImmersiveHintManager {
 
     private class OperateRecorder {
         private final WeakReference<OperateInterface> operate;
+        private int priority;
         private long duration;
 
-        public OperateRecorder(@NonNull OperateInterface operate, long duration) {
+        public OperateRecorder(@NonNull OperateInterface operate, long duration, int priority) {
             this.operate = new WeakReference<>(operate);
             this.duration = duration;
+            this.priority = priority;
         }
 
         public boolean is(@Nullable OperateInterface operate) {

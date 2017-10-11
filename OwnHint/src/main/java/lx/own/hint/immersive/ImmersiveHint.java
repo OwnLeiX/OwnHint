@@ -29,6 +29,7 @@ import lx.own.hint.R;
 final public class ImmersiveHint {
     private static volatile int mStatusHeight = -1;
 
+    final int mPriority;
     private WeakReference<ViewGroup> mParent;
     private ImmersiveLayout mView;
     private final ImmersiveHintManager.OperateInterface mOperate = new ImmersiveHintManager.OperateInterface() {
@@ -44,20 +45,20 @@ final public class ImmersiveHint {
     };
 
     public static ImmersiveHint make(@NonNull Activity activity, @NonNull String message, ImmersiveHintConfig.Type type) {
-        return make(activity, message, "", type, null);
+        return make(activity, 0, message, "", type, null);
     }
 
     public static ImmersiveHint make(@NonNull Activity activity, @StringRes int messageRes, ImmersiveHintConfig.Type type) {
-        return make(activity, messageRes, -1, type, null);
+        return make(activity, 0, messageRes, -1, type, null);
     }
 
-    public static ImmersiveHint make(@NonNull Activity activity, @StringRes int messageRes, @StringRes int actionRes, ImmersiveHintConfig.Type type, HintAction action) {
+    public static ImmersiveHint make(@NonNull Activity activity, int priority, @StringRes int messageRes, @StringRes int actionRes, ImmersiveHintConfig.Type type, HintAction action) {
         Resources resources = activity.getResources();
-        return new ImmersiveHint(activity, resources.getString(messageRes), actionRes == -1 ? "" : resources.getString(actionRes), type, action);
+        return new ImmersiveHint(activity, priority, resources.getString(messageRes), actionRes == -1 ? "" : resources.getString(actionRes), type, action);
     }
 
-    public static ImmersiveHint make(@NonNull Activity activity, @NonNull String message, @Nullable String actionText, ImmersiveHintConfig.Type type, HintAction action) {
-        return new ImmersiveHint(activity, message, actionText, type, action);
+    public static ImmersiveHint make(@NonNull Activity activity, int priority, @NonNull String message, @Nullable String actionText, ImmersiveHintConfig.Type type, HintAction action) {
+        return new ImmersiveHint(activity, priority, message, actionText, type, action);
     }
 
     private static void supportHeight(View view) {
@@ -116,7 +117,7 @@ final public class ImmersiveHint {
     }
 
     private void show(long duration) {
-        ImmersiveHintManager.$().enqueue(mOperate, duration);
+        ImmersiveHintManager.$().enqueue(mOperate, duration, mPriority);
     }
 
     public void dismiss() {
@@ -124,10 +125,11 @@ final public class ImmersiveHint {
     }
 
     private void dismiss(int reason) {
-        ImmersiveHintManager.$().dismiss(mOperate, reason);
+        ImmersiveHintManager.$().cancel(mOperate, reason);
     }
 
-    private ImmersiveHint(@NonNull Activity activity, @NonNull String message, @Nullable String actionText, ImmersiveHintConfig.Type type, HintAction action) {
+    private ImmersiveHint(@NonNull Activity activity, int priority, @NonNull String message, @Nullable String actionText, ImmersiveHintConfig.Type type, HintAction action) {
+        this.mPriority = priority;
         buildViews(activity, message, actionText, type, action);
     }
 
@@ -137,6 +139,13 @@ final public class ImmersiveHint {
         mView = (ImmersiveLayout) activity.getLayoutInflater().inflate(R.layout.immersive_layout, parent, false);
         supportHeight(mView);
         mView.adaptContent(type, message, actionText, action);
+        mView.setDetachedListener(new ImmersiveLayout.OnDetachedListener() {
+            @Override
+            public void onDetachedFromWindow(View view) {
+                mView.setDetachedListener(null);
+                dismiss();
+            }
+        });
     }
 
     private void beginTransition() {
@@ -146,12 +155,12 @@ final public class ImmersiveHint {
         if (mView.getParent() == null)
             parent.addView(mView);
         if (ViewCompat.isLaidOut(mView)) {
-            animateViewIn();
+            animateIn();
         } else {
             mView.setOnLayoutChangedListener(new ImmersiveLayout.OnLayoutChangedListener() {
                 @Override
                 public void onLayoutChanged(View view, int left, int top, int right, int bottom) {
-                    animateViewIn();
+                    animateIn();
                     mView.setOnLayoutChangedListener(null);
                 }
             });
@@ -159,10 +168,10 @@ final public class ImmersiveHint {
     }
 
     private void endTransition() {
-        animateViewOut();
+        animateOut();
     }
 
-    private void animateViewIn() {
+    private void animateIn() {
         Animation anim = new TranslateAnimation(
                 Animation.RELATIVE_TO_SELF, 0f,
                 Animation.RELATIVE_TO_SELF, 0f,
@@ -172,7 +181,7 @@ final public class ImmersiveHint {
         anim.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationEnd(Animation animation) {
-                onShown();
+                dispatchShown();
             }
 
             @Override
@@ -186,7 +195,7 @@ final public class ImmersiveHint {
         mView.startAnimation(anim);
     }
 
-    private void animateViewOut() {
+    private void animateOut() {
         Animation anim = new TranslateAnimation(
                 Animation.RELATIVE_TO_SELF, 0f,
                 Animation.RELATIVE_TO_SELF, 0f,
@@ -196,7 +205,7 @@ final public class ImmersiveHint {
         anim.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationEnd(Animation animation) {
-                onHidden();
+                dispatchHidden();
             }
 
             @Override
@@ -210,12 +219,12 @@ final public class ImmersiveHint {
         mView.startAnimation(anim);
     }
 
-    private void onShown() {
-        ImmersiveHintManager.$().onShown(mOperate);
+    private void dispatchShown() {
+        ImmersiveHintManager.$().processOperateShown(mOperate);
     }
 
-    private void onHidden() {
-        ImmersiveHintManager.$().onDismissed(mOperate);
+    private void dispatchHidden() {
+        ImmersiveHintManager.$().processOperateHidden(mOperate);
         final ViewParent parent = mView.getParent();
         if (parent instanceof ViewGroup) {
             ((ViewGroup) parent).removeView(mView);
