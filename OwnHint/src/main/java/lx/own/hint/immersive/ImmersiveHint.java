@@ -14,7 +14,6 @@ import android.view.ViewParent;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
-import android.widget.TextView;
 
 import java.lang.ref.WeakReference;
 
@@ -32,8 +31,6 @@ public class ImmersiveHint {
 
     private WeakReference<ViewGroup> mParent;
     private ImmersiveLayout mView;
-    private TextView mMessageView, mActionView;
-    private HintAction mAction;
     private final ImmersiveHintManager.OperateInterface mOperate = new ImmersiveHintManager.OperateInterface() {
         @Override
         public void show() {
