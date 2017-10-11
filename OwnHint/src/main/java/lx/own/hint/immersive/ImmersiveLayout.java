@@ -20,7 +20,7 @@ import android.widget.TextView;
  *         Created on 2017/10/11.
  */
 
-public class ImmersiveLayout extends LinearLayout implements View.OnClickListener {
+final public class ImmersiveLayout extends LinearLayout implements View.OnClickListener {
 
     private OnLayoutChangedListener mLayoutChangedListener;
     private HintAction mAction;

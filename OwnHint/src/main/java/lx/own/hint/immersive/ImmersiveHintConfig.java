@@ -2,6 +2,7 @@ package lx.own.hint.immersive;
 
 import android.support.annotation.ColorInt;
 import android.support.annotation.DrawableRes;
+import android.support.annotation.NonNull;
 
 /**
  * <b> </b><br/>
@@ -10,7 +11,7 @@ import android.support.annotation.DrawableRes;
  *         Created on 2017/10/11.
  */
 
-public interface ImmersiveHintConfig {
+interface ImmersiveHintConfig {
     enum Type {
         Warning, Hint
     }
@@ -41,5 +42,22 @@ public interface ImmersiveHintConfig {
         //other
         static long duration = 5000L;
         static long animDuration = 500L;
+
+        static void update(@NonNull CustomConfig customConfig) {
+            Params.iconResId = customConfig.iconResId;
+            Params.iconSize = customConfig.iconSize;
+            Params.messageTextColor = customConfig.messageTextColor;
+            Params.messageTextSize = customConfig.messageTextSize;
+            Params.actionTextColor = customConfig.actionTextColor;
+            Params.actionBackgroundResId = customConfig.actionBackgroundResId;
+            Params.actionTextSize = customConfig.actionTextSize;
+            Params.actionPaddingEndsHorizontal = customConfig.actionPaddingEndsHorizontal;
+            Params.hintBackgroundColor = customConfig.hintBackgroundColor;
+            Params.warningBackgroundColor = customConfig.warningBackgroundColor;
+            Params.paddingEndsHorizontal = customConfig.paddingEndsHorizontal;
+            Params.paddingEndsVertical = customConfig.paddingEndsVertical;
+            Params.duration = customConfig.duration;
+            Params.animDuration = customConfig.animDuration;
+        }
     }
 }

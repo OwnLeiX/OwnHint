@@ -26,7 +26,7 @@ import lx.own.hint.R;
  *         Create on 10/10/2017.
  */
 
-public class ImmersiveHint {
+final public class ImmersiveHint {
     private static volatile int mStatusHeight = -1;
 
     private WeakReference<ViewGroup> mParent;

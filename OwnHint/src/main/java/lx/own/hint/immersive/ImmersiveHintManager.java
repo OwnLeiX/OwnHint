@@ -55,6 +55,10 @@ public class ImmersiveHintManager {
         mRecorders = new LinkedBlockingQueue<>();
     }
 
+    public void init(@NonNull CustomConfig config) {
+        ImmersiveHintConfig.Params.update(config);
+    }
+
     void enqueue(@NonNull OperateInterface operate, long duration) {
         if (isCurrent(operate)) {
             mHandler.removeCallbacksAndMessages(mCurrentRecorder);
