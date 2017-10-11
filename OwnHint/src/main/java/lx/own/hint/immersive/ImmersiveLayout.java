@@ -28,12 +28,10 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
     ImageView mIconView;
     TextView mMessageView, mActionView;
 
-    public void setOnLayoutChangedListener(OnLayoutChangedListener listener) {
-        this.mLayoutChangedListener = listener;
-    }
-
-    public void setDetachedListener(OnDetachedListener listener) {
-        this.mDetachedListener = listener;
+    @Override
+    public void onClick(View v) {
+        if (v == mActionView && mAction != null)
+            mAction.onAction();
     }
 
     public ImmersiveLayout(Context context) {
@@ -46,81 +44,6 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
 
     public ImmersiveLayout(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        buildContent(context, attrs, defStyleAttr);
-    }
-
-    private void buildContent(Context context, AttributeSet attrs, int defStyleAttr) {
-        final int paddingEndsHorizontal = ImmersiveHintConfig.DefaultParams.paddingEndsHorizontal;
-        final int paddingEndsVertical = ImmersiveHintConfig.DefaultParams.paddingEndsVertical;
-        setPadding(paddingEndsHorizontal, paddingEndsVertical, paddingEndsHorizontal, paddingEndsVertical);
-        mIconView = buildIconView(context, attrs, defStyleAttr);
-        mMessageView = buildMessageView(context, attrs, defStyleAttr);
-        mActionView = buildActionView(context, attrs, defStyleAttr);
-        removeAllViews();
-        addView(mIconView);
-        addView(mMessageView);
-        addView(mActionView);
-        ViewCompat.setAccessibilityLiveRegion(this,
-                ViewCompat.ACCESSIBILITY_LIVE_REGION_POLITE);
-        ViewCompat.setImportantForAccessibility(this,
-                ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_YES);
-    }
-
-    private ImageView buildIconView(Context context, AttributeSet attrs, int defStyleAttr) {
-        ImageView iconView = new ImageView(context);
-        iconView.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        final int iconSize = ImmersiveHintConfig.DefaultParams.iconSize;
-        final int drawableId = ImmersiveHintConfig.DefaultParams.iconResId;
-        final int iconRightMargin = ImmersiveHintConfig.DefaultParams.iconRightMargin;
-        final boolean showIcon = ImmersiveHintConfig.DefaultParams.showIcon;
-        if (drawableId != -1)
-            iconView.setImageResource(drawableId);
-        iconView.setVisibility(showIcon ? VISIBLE : GONE);
-        LayoutParams params = new LayoutParams(iconSize, iconSize);
-        params.gravity = Gravity.CENTER_VERTICAL;
-        params.rightMargin = iconRightMargin;
-        iconView.setLayoutParams(params);
-        return iconView;
-    }
-
-    private TextView buildMessageView(Context context, AttributeSet attrs, int defStyleAttr) {
-        TextView textView = new TextView(context);
-        final int messageTextColor = ImmersiveHintConfig.DefaultParams.messageTextColor;
-        final int messageTextSize = ImmersiveHintConfig.DefaultParams.messageTextSize;
-        LayoutParams params = new LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT);
-        params.gravity = Gravity.CENTER_VERTICAL;
-        params.weight = 1;
-        textView.setLayoutParams(params);
-
-        textView.setTextSize(messageTextSize);
-        textView.setTextColor(messageTextColor);
-        textView.setGravity(Gravity.CENTER_VERTICAL | Gravity.LEFT);
-        textView.setSingleLine(true);
-        textView.setEllipsize(TextUtils.TruncateAt.END);
-        return textView;
-    }
-
-    private TextView buildActionView(Context context, AttributeSet attrs, int defStyleAttr) {
-        TextView textView = new TextView(context);
-        final int actionTextSize = ImmersiveHintConfig.DefaultParams.actionTextSize;
-        final int actionTextColor = ImmersiveHintConfig.DefaultParams.actionTextColor;
-        final int actionTextPaddingEnds = ImmersiveHintConfig.DefaultParams.actionPaddingEndsHorizontal;
-        final int actionTextBackgroundResId = ImmersiveHintConfig.DefaultParams.actionBackgroundResId;
-        final int actionLeftMargin = ImmersiveHintConfig.DefaultParams.actionLeftMargin;
-        LayoutParams params = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        params.gravity = Gravity.CENTER_VERTICAL;
-        params.leftMargin = actionLeftMargin;
-        textView.setLayoutParams(params);
-
-        textView.setTextSize(actionTextSize);
-        textView.setTextColor(actionTextColor);
-        textView.setGravity(Gravity.CENTER_VERTICAL | Gravity.RIGHT);
-        textView.setSingleLine(true);
-        textView.setEllipsize(TextUtils.TruncateAt.END);
-        textView.setPadding(actionTextPaddingEnds, 0, actionTextPaddingEnds, 0);
-        if (actionTextBackgroundResId != -1)
-            textView.setBackgroundResource(actionTextBackgroundResId);
-        return textView;
     }
 
     @Override
@@ -138,19 +61,23 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
     }
 
     void adaptContent(@NonNull ImmersiveHintConfig.Type type, @Nullable String message, @Nullable String actionText, @Nullable HintAction action) {
-        int backgroundColor = 0;
-        switch (type) {
-            case Hint:
-                backgroundColor = ImmersiveHintConfig.DefaultParams.hintBackgroundColor;
-                break;
-            case Warning:
-                backgroundColor = ImmersiveHintConfig.DefaultParams.warningBackgroundColor;
-                break;
-            default:
-                backgroundColor = ImmersiveHintConfig.DefaultParams.hintBackgroundColor;
-                break;
-        }
-        setBackgroundColor(backgroundColor);
+        final Context context = getContext();
+        final CustomConfig config = type.config;
+        final int paddingEndsHorizontal = config.paddingEndsHorizontal;
+        final int paddingEndsVertical = config.paddingEndsVertical;
+        setPadding(paddingEndsHorizontal, paddingEndsVertical, paddingEndsHorizontal, paddingEndsVertical);
+        mIconView = buildIconView(context, config);
+        mMessageView = buildMessageView(context, config);
+        mActionView = buildActionView(context, config);
+        removeAllViews();
+        addView(mIconView);
+        addView(mMessageView);
+        addView(mActionView);
+        ViewCompat.setAccessibilityLiveRegion(this,
+                ViewCompat.ACCESSIBILITY_LIVE_REGION_POLITE);
+        ViewCompat.setImportantForAccessibility(this,
+                ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_YES);
+        setBackgroundColor(config.backgroundColor);
         mMessageView.setText(message);
         mAction = action;
         if (TextUtils.isEmpty(actionText)) {
@@ -163,10 +90,69 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
         }
     }
 
-    @Override
-    public void onClick(View v) {
-        if (v == mActionView && mAction != null)
-            mAction.onAction();
+    void setOnLayoutChangedListener(OnLayoutChangedListener listener) {
+        this.mLayoutChangedListener = listener;
+    }
+
+    void setDetachedListener(OnDetachedListener listener) {
+        this.mDetachedListener = listener;
+    }
+
+    private ImageView buildIconView(Context context, CustomConfig config) {
+        ImageView iconView = new ImageView(context);
+        iconView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        final int iconSize = config.iconSize;
+        final int drawableId = config.iconResId;
+        final int iconRightMargin = config.iconRightMargin;
+        final boolean showIcon = config.showIcon;
+        if (drawableId != -1)
+            iconView.setImageResource(drawableId);
+        iconView.setVisibility(showIcon ? VISIBLE : GONE);
+        LayoutParams params = new LayoutParams(iconSize, iconSize);
+        params.gravity = Gravity.CENTER_VERTICAL;
+        params.rightMargin = iconRightMargin;
+        iconView.setLayoutParams(params);
+        return iconView;
+    }
+
+    private TextView buildMessageView(Context context, CustomConfig config) {
+        TextView textView = new TextView(context);
+        final int messageTextColor = config.messageTextColor;
+        final int messageTextSize = config.messageTextSize;
+        LayoutParams params = new LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.gravity = Gravity.CENTER_VERTICAL;
+        params.weight = 1;
+        textView.setLayoutParams(params);
+
+        textView.setTextSize(messageTextSize);
+        textView.setTextColor(messageTextColor);
+        textView.setGravity(Gravity.CENTER_VERTICAL | Gravity.LEFT);
+        textView.setSingleLine(true);
+        textView.setEllipsize(TextUtils.TruncateAt.END);
+        return textView;
+    }
+
+    private TextView buildActionView(Context context, CustomConfig config) {
+        TextView textView = new TextView(context);
+        final int actionTextSize = config.actionTextSize;
+        final int actionTextColor = config.actionTextColor;
+        final int actionTextPaddingEnds = config.actionPaddingEndsHorizontal;
+        final int actionTextBackgroundResId = config.actionBackgroundResId;
+        final int actionLeftMargin = config.actionLeftMargin;
+        LayoutParams params = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.gravity = Gravity.CENTER_VERTICAL;
+        params.leftMargin = actionLeftMargin;
+        textView.setLayoutParams(params);
+
+        textView.setTextSize(actionTextSize);
+        textView.setTextColor(actionTextColor);
+        textView.setGravity(Gravity.CENTER_VERTICAL | Gravity.RIGHT);
+        textView.setSingleLine(true);
+        textView.setEllipsize(TextUtils.TruncateAt.END);
+        textView.setPadding(actionTextPaddingEnds, 0, actionTextPaddingEnds, 0);
+        if (actionTextBackgroundResId != -1)
+            textView.setBackgroundResource(actionTextBackgroundResId);
+        return textView;
     }
 
     interface OnLayoutChangedListener {

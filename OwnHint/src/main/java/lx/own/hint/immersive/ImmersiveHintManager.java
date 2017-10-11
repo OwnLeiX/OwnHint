@@ -49,8 +49,8 @@ public class ImmersiveHintManager {
         mRecorders = new LinkedBlockingQueue<>();
     }
 
-    public void init(@NonNull DefaultConfig config) {
-        ImmersiveHintConfig.DefaultParams.update(config);
+    public void init(@NonNull CustomConfig config) {
+        ImmersiveHintConfig.Type.Hint.custom(config);
     }
 
     void enqueue(@NonNull OperateInterface operate, long duration, int priority) {
@@ -105,6 +105,10 @@ public class ImmersiveHintManager {
         }
     }
 
+    void runOnUIThread(@NonNull Runnable r) {
+        mHandler.post(r);
+    }
+
     private boolean orderOperate(@NonNull OperateRecorder recorder) {
         boolean returnValue = false;
         mCurrentRecorder = recorder;
@@ -133,7 +137,7 @@ public class ImmersiveHintManager {
     }
 
     private void scheduleOperateTimeout(@NonNull OperateRecorder recorder) {
-        long delay = recorder.duration <= 0 ? ImmersiveHintConfig.DefaultParams.showDuration : recorder.duration;
+        long delay = recorder.duration;
         if (delay <= 0)
             delay = 100;
         mHandler.removeCallbacksAndMessages(recorder);

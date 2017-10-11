@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
 import android.os.Build;
+import android.os.Looper;
 import android.support.annotation.ColorInt;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
@@ -31,7 +32,8 @@ import lx.own.hint.R;
 final public class ImmersiveHint {
     private static volatile int mStatusHeight = -1;
 
-    final int mPriority;
+    int mPriority = 0;
+    private final ImmersiveHintConfig.Type mType;
     private WeakReference<ViewGroup> mParent;
     private ImmersiveLayout mView;
     private final ImmersiveHintManager.OperateInterface mOperate = new ImmersiveHintManager.OperateInterface() {
@@ -47,28 +49,20 @@ final public class ImmersiveHint {
     };
 
     public static ImmersiveHint make(@NonNull Activity activity, @StringRes int messageRes, ImmersiveHintConfig.Type type) {
-        return make(activity, 0, messageRes, type);
+        return make(activity, messageRes, type, -1, null);
     }
 
     public static ImmersiveHint make(@NonNull Activity activity, @NonNull String message, ImmersiveHintConfig.Type type) {
-        return make(activity, 0, message, type);
+        return make(activity, message, type, "", null);
     }
 
-    public static ImmersiveHint make(@NonNull Activity activity, int priority, @StringRes int messageRes, ImmersiveHintConfig.Type type) {
-        return make(activity, priority, messageRes, -1, type, null);
-    }
-
-    public static ImmersiveHint make(@NonNull Activity activity, int priority, @NonNull String message, ImmersiveHintConfig.Type type) {
-        return make(activity, priority, message, "", type, null);
-    }
-
-    public static ImmersiveHint make(@NonNull Activity activity, int priority, @StringRes int messageRes, @StringRes int actionRes, ImmersiveHintConfig.Type type, HintAction action) {
+    public static ImmersiveHint make(@NonNull Activity activity, @StringRes int messageRes, ImmersiveHintConfig.Type type, @StringRes int actionRes, HintAction action) {
         Resources resources = activity.getResources();
-        return new ImmersiveHint(activity, priority, resources.getString(messageRes), actionRes == -1 ? "" : resources.getString(actionRes), type, action);
+        return new ImmersiveHint(activity, resources.getString(messageRes), actionRes == -1 ? "" : resources.getString(actionRes), type, action);
     }
 
-    public static ImmersiveHint make(@NonNull Activity activity, int priority, @NonNull String message, @Nullable String actionText, ImmersiveHintConfig.Type type, HintAction action) {
-        return new ImmersiveHint(activity, priority, message, actionText, type, action);
+    public static ImmersiveHint make(@NonNull Activity activity, @NonNull String message, ImmersiveHintConfig.Type type, @Nullable String actionText, HintAction action) {
+        return new ImmersiveHint(activity, message, actionText, type, action);
     }
 
     private static void supportHeight(View view) {
@@ -123,28 +117,51 @@ final public class ImmersiveHint {
     }
 
     public void show() {
-        show(ImmersiveHintConfig.DefaultParams.showDuration);
+        show(mType.config.showDuration);
     }
 
-    private void show(long duration) {
-        ImmersiveHintManager.$().enqueue(mOperate, duration, mPriority);
+    private void show(final long duration) {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            ImmersiveHintManager.$().enqueue(mOperate, duration, mPriority);
+        } else {
+            ImmersiveHintManager.$().runOnUIThread(new Runnable() {
+                @Override
+                public void run() {
+                    ImmersiveHintManager.$().enqueue(mOperate, duration, mPriority);
+                }
+            });
+        }
     }
 
     public void dismiss() {
         dismiss(ImmersiveHintConfig.DismissReason.REASON_CODES);
     }
 
-    private void dismiss(int reason) {
-        ImmersiveHintManager.$().cancel(mOperate, reason);
-    }
-
-    public ImmersiveHint customIconDrawable(@DrawableRes int resId) {
-        mView.mIconView.setImageResource(resId);
-        return this;
+    private void dismiss(final int reason) {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            ImmersiveHintManager.$().cancel(mOperate, reason);
+        } else {
+            ImmersiveHintManager.$().runOnUIThread(new Runnable() {
+                @Override
+                public void run() {
+                    ImmersiveHintManager.$().cancel(mOperate, reason);
+                }
+            });
+        }
     }
 
     public ImmersiveHint withIcon(boolean show) {
         mView.mIconView.setVisibility(show ? View.VISIBLE : View.GONE);
+        return this;
+    }
+
+    public ImmersiveHint priority(int priority) {
+        this.mPriority = priority;
+        return this;
+    }
+
+    public ImmersiveHint customIconDrawable(@DrawableRes int resId) {
+        mView.mIconView.setImageResource(resId);
         return this;
     }
 
@@ -191,8 +208,8 @@ final public class ImmersiveHint {
         return this;
     }
 
-    private ImmersiveHint(@NonNull Activity activity, int priority, @NonNull String message, @Nullable String actionText, ImmersiveHintConfig.Type type, HintAction action) {
-        this.mPriority = priority;
+    private ImmersiveHint(@NonNull Activity activity, @NonNull String message, @Nullable String actionText, ImmersiveHintConfig.Type type, HintAction action) {
+        this.mType = type;
         buildViews(activity, message, actionText, type, action);
     }
 
@@ -200,7 +217,6 @@ final public class ImmersiveHint {
         ViewGroup parent = findSuitableParent(activity.getWindow().getDecorView());
         mParent = new WeakReference<ViewGroup>(parent);
         mView = (ImmersiveLayout) activity.getLayoutInflater().inflate(R.layout.immersive_layout, parent, false);
-        supportHeight(mView);
         mView.adaptContent(type, message, actionText, action);
         mView.setDetachedListener(new ImmersiveLayout.OnDetachedListener() {
             @Override
@@ -209,6 +225,7 @@ final public class ImmersiveHint {
                 dismiss();
             }
         });
+        supportHeight(mView);
     }
 
     private void beginTransition() {
@@ -240,7 +257,7 @@ final public class ImmersiveHint {
                 Animation.RELATIVE_TO_SELF, 0f,
                 Animation.RELATIVE_TO_SELF, -1.0f,
                 Animation.RELATIVE_TO_SELF, 0f);
-        anim.setDuration(ImmersiveHintConfig.DefaultParams.animDuration);
+        anim.setDuration(mType.config.animDuration);
         anim.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationEnd(Animation animation) {
@@ -264,7 +281,7 @@ final public class ImmersiveHint {
                 Animation.RELATIVE_TO_SELF, 0f,
                 Animation.RELATIVE_TO_SELF, 0f,
                 Animation.RELATIVE_TO_SELF, -1.0f);
-        anim.setDuration(ImmersiveHintConfig.DefaultParams.animDuration);
+        anim.setDuration(mType.config.animDuration);
         anim.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationEnd(Animation animation) {

@@ -10,7 +10,9 @@ import android.support.annotation.DrawableRes;
  *         Created on 2017/10/11.
  */
 
-public class DefaultConfig {
+public class CustomConfig {
+    public static final CustomConfig defaultConfig = new CustomConfig();
+
     //icon
     @DrawableRes
     int iconResId = -1;
@@ -31,96 +33,89 @@ public class DefaultConfig {
     int actionLeftMargin = 100;
     //root
     @ColorInt
-    int hintBackgroundColor = 0xFF00FF00;
-    @ColorInt
-    int warningBackgroundColor = 0xFFFF0000;
+    int backgroundColor = 0xFF00FF00;
     int paddingEndsHorizontal = 10;
     int paddingEndsVertical = 10;
     //other
     long showDuration = 5000L;
     long animDuration = 500L;
 
-    public DefaultConfig setIconResId(@DrawableRes int iconResId) {
+    public CustomConfig setIconResId(@DrawableRes int iconResId) {
         this.iconResId = iconResId;
         return this;
     }
 
-    public DefaultConfig setIconSize(int iconSize) {
+    public CustomConfig setIconSize(int iconSize) {
         this.iconSize = iconSize;
         return this;
     }
 
-    public DefaultConfig setMessageTextColor(@ColorInt int messageTextColor) {
+    public CustomConfig setMessageTextColor(@ColorInt int messageTextColor) {
         this.messageTextColor = messageTextColor;
         return this;
     }
 
-    public DefaultConfig setMessageTextSize(int messageTextSize) {
+    public CustomConfig setMessageTextSize(int messageTextSize) {
         this.messageTextSize = messageTextSize;
         return this;
     }
 
-    public DefaultConfig setActionTextColor(@ColorInt int actionTextColor) {
+    public CustomConfig setActionTextColor(@ColorInt int actionTextColor) {
         this.actionTextColor = actionTextColor;
         return this;
     }
 
-    public DefaultConfig setActionBackgroundResId(@DrawableRes int actionBackgroundResId) {
+    public CustomConfig setActionBackgroundResId(@DrawableRes int actionBackgroundResId) {
         this.actionBackgroundResId = actionBackgroundResId;
         return this;
     }
 
-    public DefaultConfig setActionTextSize(int actionTextSize) {
+    public CustomConfig setActionTextSize(int actionTextSize) {
         this.actionTextSize = actionTextSize;
         return this;
     }
 
-    public DefaultConfig setActionPaddingEndsHorizontal(int actionPaddingEndsHorizontal) {
+    public CustomConfig setActionPaddingEndsHorizontal(int actionPaddingEndsHorizontal) {
         this.actionPaddingEndsHorizontal = actionPaddingEndsHorizontal;
         return this;
     }
 
-    public DefaultConfig setHintBackgroundColor(@ColorInt int hintBackgroundColor) {
-        this.hintBackgroundColor = hintBackgroundColor;
+    public CustomConfig setBackgroundColor(@ColorInt int backgroundColor) {
+        this.backgroundColor = backgroundColor;
         return this;
     }
 
-    public DefaultConfig setWarningBackgroundColor(@ColorInt int warningBackgroundColor) {
-        this.warningBackgroundColor = warningBackgroundColor;
-        return this;
-    }
-
-    public DefaultConfig setPaddingEndsHorizontal(int paddingEndsHorizontal) {
+    public CustomConfig setPaddingEndsHorizontal(int paddingEndsHorizontal) {
         this.paddingEndsHorizontal = paddingEndsHorizontal;
         return this;
     }
 
-    public DefaultConfig setPaddingEndsVertical(int paddingEndsVertical) {
+    public CustomConfig setPaddingEndsVertical(int paddingEndsVertical) {
         this.paddingEndsVertical = paddingEndsVertical;
         return this;
     }
 
-    public DefaultConfig setShowDuration(long showDuration) {
+    public CustomConfig setShowDuration(long showDuration) {
         this.showDuration = showDuration;
         return this;
     }
 
-    public DefaultConfig setAnimDuration(long animDuration) {
+    public CustomConfig setAnimDuration(long animDuration) {
         this.animDuration = animDuration;
         return this;
     }
 
-    public DefaultConfig setIconRightMargin(int iconRightMargin) {
+    public CustomConfig setIconRightMargin(int iconRightMargin) {
         this.iconRightMargin = iconRightMargin;
         return this;
     }
 
-    public DefaultConfig setShowIcon(boolean showIcon) {
+    public CustomConfig setShowIcon(boolean showIcon) {
         this.showIcon = showIcon;
         return this;
     }
 
-    public DefaultConfig setActionLeftMargin(int actionLeftMargin) {
+    public CustomConfig setActionLeftMargin(int actionLeftMargin) {
         this.actionLeftMargin = actionLeftMargin;
         return this;
     }
