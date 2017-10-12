@@ -6,6 +6,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.view.ViewCompat;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -118,13 +119,13 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
     private TextView buildMessageView(Context context, CustomConfig config) {
         TextView textView = new TextView(context);
         final int messageTextColor = config.messageTextColor;
-        final int messageTextSize = config.messageTextSize;
+        final int messageTextSize = config.messageTextSizeSp;
         LayoutParams params = new LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT);
         params.gravity = Gravity.CENTER_VERTICAL;
         params.weight = 1;
         textView.setLayoutParams(params);
 
-        textView.setTextSize(messageTextSize);
+        textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, messageTextSize);
         textView.setTextColor(messageTextColor);
         textView.setGravity(config.messageGravity);
         textView.setSingleLine(true);
@@ -134,9 +135,10 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
 
     private TextView buildActionView(Context context, CustomConfig config) {
         TextView textView = new TextView(context);
-        final int actionTextSize = config.actionTextSize;
+        final int actionTextSize = config.actionTextSizeSp;
         final int actionTextColor = config.actionTextColor;
-        final int actionTextPaddingEnds = config.actionPaddingEndsHorizontal;
+        final int actionTextPaddingEndsHorizontal = config.actionPaddingEndsHorizontal;
+        final int actionTextPaddingEndsVertical = config.actionPaddingEndsVertical;
         final int actionTextBackgroundResId = config.actionBackgroundResId;
         final int actionLeftMargin = config.actionLeftMargin;
         LayoutParams params = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -144,12 +146,12 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
         params.leftMargin = actionLeftMargin;
         textView.setLayoutParams(params);
 
-        textView.setTextSize(actionTextSize);
+        textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, actionTextSize);
         textView.setTextColor(actionTextColor);
-        textView.setGravity(Gravity.CENTER_VERTICAL | Gravity.RIGHT);
+        textView.setGravity(Gravity.CENTER);
         textView.setSingleLine(true);
         textView.setEllipsize(TextUtils.TruncateAt.END);
-        textView.setPadding(actionTextPaddingEnds, 0, actionTextPaddingEnds, 0);
+        textView.setPadding(actionTextPaddingEndsHorizontal, actionTextPaddingEndsVertical, actionTextPaddingEndsHorizontal, actionTextPaddingEndsVertical);
         if (actionTextBackgroundResId != -1)
             textView.setBackgroundResource(actionTextBackgroundResId);
         return textView;

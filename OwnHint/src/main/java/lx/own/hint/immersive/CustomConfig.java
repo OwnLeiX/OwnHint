@@ -28,7 +28,7 @@ public class CustomConfig {
     //message
     @ColorInt
     int messageTextColor = 0xFFFFFFFF;
-    int messageTextSize = 20;
+    int messageTextSizeSp = 20;
     @GravityConfig
     int messageGravity = Gravity.LEFT | Gravity.CENTER_VERTICAL;
     //action
@@ -36,8 +36,9 @@ public class CustomConfig {
     int actionTextColor = 0xFFFFFFFF;
     @DrawableRes
     int actionBackgroundResId = -1;
-    int actionTextSize = 20;
+    int actionTextSizeSp = 20;
     int actionPaddingEndsHorizontal = 10;
+    int actionPaddingEndsVertical = 10;
     int actionLeftMargin = 100;
     //root
     @ColorInt
@@ -63,8 +64,8 @@ public class CustomConfig {
         return this;
     }
 
-    public CustomConfig setMessageTextSize(int messageTextSize) {
-        this.messageTextSize = messageTextSize;
+    public CustomConfig setMessageTextSizeSp(int messageTextSizeSp) {
+        this.messageTextSizeSp = messageTextSizeSp;
         return this;
     }
 
@@ -78,8 +79,8 @@ public class CustomConfig {
         return this;
     }
 
-    public CustomConfig setActionTextSize(int actionTextSize) {
-        this.actionTextSize = actionTextSize;
+    public CustomConfig setActionTextSizeSp(int actionTextSizeSp) {
+        this.actionTextSizeSp = actionTextSizeSp;
         return this;
     }
 
@@ -130,6 +131,11 @@ public class CustomConfig {
 
     public CustomConfig setMessageGravity(@GravityConfig int messageGravity) {
         this.messageGravity = messageGravity;
+        return this;
+    }
+
+    public CustomConfig setActionPaddingEndsVertical(int actionPaddingEndsVertical) {
+        this.actionPaddingEndsVertical = actionPaddingEndsVertical;
         return this;
     }
 }
