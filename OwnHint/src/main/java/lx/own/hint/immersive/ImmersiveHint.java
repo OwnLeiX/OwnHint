@@ -238,8 +238,10 @@ final public class ImmersiveHint {
 
     private void beginTransition() {
         ViewGroup parent = mParent.get();
-        if (parent == null)
+        if (parent == null) {
+            dispatchHidden();
             return;
+        }
         if (mView.getParent() == null)
             parent.addView(mView);
         if (ViewCompat.isLaidOut(mView)) {
