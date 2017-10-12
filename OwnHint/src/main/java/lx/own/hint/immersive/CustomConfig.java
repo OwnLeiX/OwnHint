@@ -1,5 +1,6 @@
 package lx.own.hint.immersive;
 
+import android.app.Activity;
 import android.support.annotation.ColorInt;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.IntDef;
@@ -48,6 +49,8 @@ public class CustomConfig {
     //other
     long showDuration = 5000L;
     long animDuration = 500L;
+
+    OverallModelSupporter overallModelSupporter;
 
     public CustomConfig setIconResId(@DrawableRes int iconResId) {
         this.iconResId = iconResId;
@@ -137,5 +140,14 @@ public class CustomConfig {
     public CustomConfig setActionPaddingEndsVertical(int actionPaddingEndsVertical) {
         this.actionPaddingEndsVertical = actionPaddingEndsVertical;
         return this;
+    }
+
+    public CustomConfig overallModel(OverallModelSupporter supporter) {
+        this.overallModelSupporter = supporter;
+        return this;
+    }
+
+    public interface OverallModelSupporter {
+        Activity supportNewActivity();
     }
 }

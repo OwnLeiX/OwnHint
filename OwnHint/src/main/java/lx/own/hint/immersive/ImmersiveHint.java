@@ -56,13 +56,14 @@ final public class ImmersiveHint {
     private final View.OnAttachStateChangeListener mParentDetachListener = new View.OnAttachStateChangeListener() {
         @Override
         public void onViewAttachedToWindow(View v) {
-
+            if (mParent.get() == null && v instanceof ViewGroup)
+                mParent = new WeakReference<ViewGroup>((ViewGroup) v);
         }
 
         @Override
         public void onViewDetachedFromWindow(View v) {
             v.removeOnAttachStateChangeListener(this);
-            if (mParent != null)
+            if (mParent != null && mParent.get() == v)
                 mParent.clear();
         }
     };
@@ -235,10 +236,11 @@ final public class ImmersiveHint {
     }
 
     private void buildViews(Activity activity, String message, String actionText, ImmersiveHintConfig.Type type, HintAction action) {
-        ViewGroup parent = findSuitableParent(activity.getWindow().getDecorView());
+        final ViewGroup parent = findSuitableParent(activity.getWindow().getDecorView());
         if (parent != null)
             parent.addOnAttachStateChangeListener(mParentDetachListener);
-        mParent = new WeakReference<ViewGroup>(parent);
+        final boolean usable = parent != null && ViewCompat.isAttachedToWindow(parent);
+        mParent = new WeakReference<ViewGroup>(usable ? parent : null);
         mView = (ImmersiveLayout) activity.getLayoutInflater().inflate(R.layout.immersive_layout, parent, false);
         mView.adaptContent(type, message, actionText, action);
         mView.setDetachedListener(new ImmersiveLayout.OnDetachedListener() {
@@ -254,26 +256,44 @@ final public class ImmersiveHint {
     private void beginTransition() {
         ViewGroup parent = mParent.get();
         if (parent == null) {
-            dispatchHidden();
+            inspectOverallModel();
             return;
-        }
-        if (mView.getParent() == null)
-            parent.addView(mView);
-        if (ViewCompat.isLaidOut(mView)) {
-            animateIn();
         } else {
-            mView.setOnLayoutChangedListener(new ImmersiveLayout.OnLayoutChangedListener() {
-                @Override
-                public void onLayoutChanged(View view, int left, int top, int right, int bottom) {
-                    animateIn();
-                    mView.setOnLayoutChangedListener(null);
-                }
-            });
+            if (mView.getParent() == null)
+                parent.addView(mView);
+            if (ViewCompat.isLaidOut(mView)) {
+                animateIn();
+            } else {
+                mView.setOnLayoutChangedListener(new ImmersiveLayout.OnLayoutChangedListener() {
+                    @Override
+                    public void onLayoutChanged(View view, int left, int top, int right, int bottom) {
+                        animateIn();
+                        mView.setOnLayoutChangedListener(null);
+                    }
+                });
+            }
         }
     }
 
     private void endTransition() {
         animateOut();
+    }
+
+    private void inspectOverallModel() {
+        final CustomConfig.OverallModelSupporter supporter = mType.config.overallModelSupporter;
+        if (supporter != null) {
+            final Activity act = supporter.supportNewActivity();
+            if (act != null && !act.isFinishing()) {
+                final ViewGroup parent = findSuitableParent(act.getWindow().getDecorView());
+                if (parent != null && ViewCompat.isAttachedToWindow(parent)) {
+                    parent.addOnAttachStateChangeListener(mParentDetachListener);
+                    mParent = new WeakReference<ViewGroup>(parent);
+                    beginTransition();
+                    return;
+                }
+            }
+        }
+        dispatchHidden();
     }
 
     private void animateIn() {
