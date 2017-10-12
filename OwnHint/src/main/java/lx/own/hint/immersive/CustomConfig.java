@@ -2,6 +2,8 @@ package lx.own.hint.immersive;
 
 import android.support.annotation.ColorInt;
 import android.support.annotation.DrawableRes;
+import android.support.annotation.IntDef;
+import android.view.Gravity;
 
 /**
  * <b> </b><br/>
@@ -13,6 +15,10 @@ import android.support.annotation.DrawableRes;
 public class CustomConfig {
     public static final CustomConfig defaultConfig = new CustomConfig();
 
+    @IntDef({Gravity.CENTER, Gravity.LEFT, Gravity.RIGHT})
+    public @interface GravityConfig {
+    }
+
     //icon
     @DrawableRes
     int iconResId = -1;
@@ -23,6 +29,8 @@ public class CustomConfig {
     @ColorInt
     int messageTextColor = 0xFFFFFFFF;
     int messageTextSize = 20;
+    @GravityConfig
+    int messageGravity = Gravity.LEFT | Gravity.CENTER_VERTICAL;
     //action
     @ColorInt
     int actionTextColor = 0xFFFFFFFF;
@@ -117,6 +125,11 @@ public class CustomConfig {
 
     public CustomConfig setActionLeftMargin(int actionLeftMargin) {
         this.actionLeftMargin = actionLeftMargin;
+        return this;
+    }
+
+    public CustomConfig setMessageGravity(@GravityConfig int messageGravity) {
+        this.messageGravity = messageGravity;
         return this;
     }
 }

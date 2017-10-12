@@ -126,7 +126,7 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
 
         textView.setTextSize(messageTextSize);
         textView.setTextColor(messageTextColor);
-        textView.setGravity(Gravity.CENTER_VERTICAL | Gravity.LEFT);
+        textView.setGravity(config.messageGravity);
         textView.setSingleLine(true);
         textView.setEllipsize(TextUtils.TruncateAt.END);
         return textView;
