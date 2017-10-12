@@ -63,7 +63,7 @@ final public class ImmersiveHint {
         @Override
         public void onViewDetachedFromWindow(View v) {
             v.removeOnAttachStateChangeListener(this);
-            if (mParent != null && mParent.get() == v)
+            if (mParent.get() == v)
                 mParent.clear();
         }
     };
@@ -257,7 +257,6 @@ final public class ImmersiveHint {
         ViewGroup parent = mParent.get();
         if (parent == null) {
             inspectOverallModel();
-            return;
         } else {
             if (mView.getParent() == null)
                 parent.addView(mView);
