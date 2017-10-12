@@ -8,6 +8,7 @@ import android.os.Looper;
 import android.support.annotation.AnyThread;
 import android.support.annotation.ColorInt;
 import android.support.annotation.DrawableRes;
+import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
@@ -33,7 +34,11 @@ import lx.own.hint.R;
 final public class ImmersiveHint {
     private static volatile int mStatusHeight = -1;
 
-    int mPriority = 0;
+    @IntDef({ImmersiveHintConfig.Priority.HIGH, ImmersiveHintConfig.Priority.NORMAL, ImmersiveHintConfig.Priority.LOW})
+    public @interface HintPriority {
+    }
+
+    int mPriority = ImmersiveHintConfig.Priority.NORMAL;
     private final ImmersiveHintConfig.Type mType;
     private WeakReference<ViewGroup> mParent;
     private ImmersiveLayout mView;
@@ -49,21 +54,21 @@ final public class ImmersiveHint {
         }
     };
 
-    public static ImmersiveHint make(@NonNull Activity activity, @StringRes int messageRes, ImmersiveHintConfig.Type type) {
-        return make(activity, messageRes, type, -1, null);
+    public static ImmersiveHint make(@NonNull ImmersiveHintConfig.Type type, @NonNull Activity activity, @StringRes int messageRes) {
+        return make(type, activity, messageRes, -1, null);
     }
 
-    public static ImmersiveHint make(@NonNull Activity activity, @NonNull String message, ImmersiveHintConfig.Type type) {
-        return make(activity, message, type, "", null);
+    public static ImmersiveHint make(@NonNull ImmersiveHintConfig.Type type, @NonNull Activity activity, @NonNull String message) {
+        return make(type, activity, message, "", null);
     }
 
-    public static ImmersiveHint make(@NonNull Activity activity, @StringRes int messageRes, ImmersiveHintConfig.Type type, @StringRes int actionRes, HintAction action) {
+    public static ImmersiveHint make(@NonNull ImmersiveHintConfig.Type type, @NonNull Activity activity, @StringRes int messageRes, @StringRes int actionRes, HintAction action) {
         Resources resources = activity.getResources();
-        return new ImmersiveHint(activity, resources.getString(messageRes), actionRes == -1 ? "" : resources.getString(actionRes), type, action);
+        return new ImmersiveHint(type, activity, resources.getString(messageRes), actionRes == -1 ? "" : resources.getString(actionRes), action);
     }
 
-    public static ImmersiveHint make(@NonNull Activity activity, @NonNull String message, ImmersiveHintConfig.Type type, @Nullable String actionText, HintAction action) {
-        return new ImmersiveHint(activity, message, actionText, type, action);
+    public static ImmersiveHint make(@NonNull ImmersiveHintConfig.Type type, @NonNull Activity activity, @NonNull String message, @Nullable String actionText, HintAction action) {
+        return new ImmersiveHint(type, activity, message, actionText, action);
     }
 
     private static void supportHeight(View view) {
@@ -158,7 +163,7 @@ final public class ImmersiveHint {
         return this;
     }
 
-    public ImmersiveHint priority(int priority) {
+    public ImmersiveHint priority(@HintPriority int priority) {
         this.mPriority = priority;
         return this;
     }
@@ -211,7 +216,7 @@ final public class ImmersiveHint {
         return this;
     }
 
-    private ImmersiveHint(@NonNull Activity activity, @NonNull String message, @Nullable String actionText, ImmersiveHintConfig.Type type, HintAction action) {
+    private ImmersiveHint(@NonNull ImmersiveHintConfig.Type type, @NonNull Activity activity, @NonNull String message, @Nullable String actionText, HintAction action) {
         this.mType = type;
         buildViews(activity, message, actionText, type, action);
     }

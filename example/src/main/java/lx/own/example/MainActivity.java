@@ -14,28 +14,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        findViewById(R.id.p0).setOnClickListener(this);
-        findViewById(R.id.p100).setOnClickListener(this);
-        findViewById(R.id.p200).setOnClickListener(this);
+        findViewById(R.id.pLow).setOnClickListener(this);
+        findViewById(R.id.pNormal).setOnClickListener(this);
+        findViewById(R.id.pHigh).setOnClickListener(this);
         findViewById(R.id.open).setOnClickListener(this);
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.p0:
-                ImmersiveHint.make(this, "this is 0 asdasdasdasdasdasdasdasdasdasdasdasdasdasdas", ImmersiveHintConfig.Type.Hint, "action", null)
-                        .priority(0)
+            case R.id.pLow:
+                ImmersiveHint.make(ImmersiveHintConfig.Type.Hint, this, "this is Low", "action", null)
+                        .priority(ImmersiveHintConfig.Priority.LOW)
                         .withIcon(true)
                         .customIconSize(100)
                         .customIconDrawable(R.mipmap.ic_launcher_round)
                         .show();
                 break;
-            case R.id.p100:
-                ImmersiveHint.make(this, "this is 100", ImmersiveHintConfig.Type.Hint).priority(100).show();
+            case R.id.pNormal:
+                ImmersiveHint.make(ImmersiveHintConfig.Type.Hint, this, "this is Normal").priority(ImmersiveHintConfig.Priority.NORMAL).show();
                 break;
-            case R.id.p200:
-                ImmersiveHint.make(this, "this is 200", ImmersiveHintConfig.Type.Warning).priority(200).show();
+            case R.id.pHigh:
+                ImmersiveHint.make(ImmersiveHintConfig.Type.Warning, this, "this is High").priority(ImmersiveHintConfig.Priority.HIGH).show();
                 break;
             case R.id.open:
                 startActivity(new Intent(this, SubActivity.class));

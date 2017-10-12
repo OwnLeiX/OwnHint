@@ -29,4 +29,10 @@ public interface ImmersiveHintConfig {
         int REASON_ACTION = 3;
         int REASON_CODES = 4;
     }
+
+    interface Priority {
+        int HIGH = 300;
+        int NORMAL = 200;
+        int LOW = 100;
+    }
 }

@@ -32,7 +32,9 @@ public class ImmersiveHintManager {
 
     private final Handler mHandler;
     private volatile OperateRecorder mCurrentRecorder;
-    private final LinkedBlockingQueue<OperateRecorder> mRecorders;
+    private final LinkedBlockingQueue<OperateRecorder> mHighPriorRecorders;
+    private final LinkedBlockingQueue<OperateRecorder> mNormalPriorRecorders;
+    private final LinkedBlockingQueue<OperateRecorder> mLowPriorRecorders;
 
     private ImmersiveHintManager() {
         mHandler = new Handler(Looper.getMainLooper()) {
@@ -46,11 +48,17 @@ public class ImmersiveHintManager {
                 }
             }
         };
-        mRecorders = new LinkedBlockingQueue<>();
+        mHighPriorRecorders = new LinkedBlockingQueue<>();
+        mNormalPriorRecorders = new LinkedBlockingQueue<>();
+        mLowPriorRecorders = new LinkedBlockingQueue<>();
     }
 
-    public void init(@NonNull CustomConfig config) {
+    public void initTypeHintConfig(@NonNull CustomConfig config) {
         ImmersiveHintConfig.Type.Hint.custom(config);
+    }
+
+    public void initTypeWarningConfig(@NonNull CustomConfig config) {
+        ImmersiveHintConfig.Type.Warning.custom(config);
     }
 
     void enqueue(@NonNull OperateInterface operate, long duration, int priority) {
@@ -63,7 +71,7 @@ public class ImmersiveHintManager {
             final OperateRecorder next = new OperateRecorder(operate, duration, priority);
             if (mCurrentRecorder != null) {
                 if (mCurrentRecorder.priority >= priority || cancelOperate(mCurrentRecorder, ImmersiveHintConfig.DismissReason.REASON_REPLACE)) {
-                    mRecorders.offer(next);
+                    offerRecorder(next);
                 } else {
                     orderOperate(next);
                 }
@@ -73,21 +81,18 @@ public class ImmersiveHintManager {
         }
     }
 
-    void cancel(@NonNull OperateInterface operate, int reason) {
+    boolean cancel(@NonNull OperateInterface operate, int reason) {
+        boolean returnValue = false;
         if (isCurrent(operate)) {
             cancelOperate(mCurrentRecorder, reason);
             mCurrentRecorder = null;
+            returnValue = true;
         } else {
-            Iterator<OperateRecorder> iterator = mRecorders.iterator();
-            while (iterator.hasNext()) {
-                OperateRecorder next = iterator.next();
-                if (next == null) continue;
-                if (next.is(operate)) {
-                    iterator.remove();
-                    break;
-                }
-            }
+            returnValue = removeInQueue(operate, mHighPriorRecorders)
+                    || removeInQueue(operate, mNormalPriorRecorders)
+                    || removeInQueue(operate, mLowPriorRecorders);
         }
+        return returnValue;
     }
 
     void processOperateShown(@NonNull OperateInterface operate) {
@@ -99,7 +104,7 @@ public class ImmersiveHintManager {
     void processOperateHidden(@NonNull OperateInterface operate) {
         if (isCurrent(operate)) {
             mCurrentRecorder = null;
-            final OperateRecorder next = mRecorders.poll();
+            final OperateRecorder next = pollRecorder();
             if (next != null)
                 orderOperate(next);
         }
@@ -118,7 +123,7 @@ public class ImmersiveHintManager {
             returnValue = true;
         } else {
             mCurrentRecorder = null;
-            final OperateRecorder next = mRecorders.poll();
+            final OperateRecorder next = pollRecorder();
             if (next != null)
                 orderOperate(next);
         }
@@ -144,6 +149,19 @@ public class ImmersiveHintManager {
         mHandler.sendMessageDelayed(Message.obtain(mHandler, ImmersiveHintConfig.DismissReason.REASON_TIMEOUT, recorder), delay);
     }
 
+    private boolean removeInQueue(@NonNull OperateInterface target, @NonNull LinkedBlockingQueue<OperateRecorder> queue) {
+        Iterator<OperateRecorder> iterator = queue.iterator();
+        while (iterator.hasNext()) {
+            OperateRecorder next = iterator.next();
+            if (next == null) continue;
+            if (next.is(target)) {
+                iterator.remove();
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void processOperateTimeout(@NonNull OperateRecorder recorder) {
         mHandler.removeCallbacksAndMessages(recorder);
         cancelOperate(recorder, ImmersiveHintConfig.DismissReason.REASON_TIMEOUT);
@@ -151,6 +169,25 @@ public class ImmersiveHintManager {
 
     private boolean isCurrent(@Nullable OperateInterface operate) {
         return this.mCurrentRecorder != null && this.mCurrentRecorder.is(operate);
+    }
+
+    private void offerRecorder(@NonNull OperateRecorder recorder) {
+        if (recorder.priority == ImmersiveHintConfig.Priority.HIGH) {
+            mHighPriorRecorders.offer(recorder);
+        } else if (recorder.priority == ImmersiveHintConfig.Priority.NORMAL) {
+            mNormalPriorRecorders.offer(recorder);
+        } else {
+            mLowPriorRecorders.offer(recorder);
+        }
+    }
+
+    private OperateRecorder pollRecorder() {
+        OperateRecorder returnValue = mHighPriorRecorders.poll();
+        if (returnValue == null)
+            returnValue = mNormalPriorRecorders.poll();
+        if (returnValue == null)
+            returnValue = mLowPriorRecorders.poll();
+        return returnValue;
     }
 
     private class OperateRecorder {

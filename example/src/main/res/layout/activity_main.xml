@@ -9,32 +9,32 @@
     tools:context="lx.own.example.MainActivity">
 
     <TextView
-        android:id="@+id/p0"
+        android:id="@+id/pLow"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="#000"
         android:padding="10dp"
-        android:text="Priority 0 Hint"
+        android:text="Priority Low Hint"
         android:textColor="#fff" />
 
     <TextView
-        android:id="@+id/p100"
+        android:id="@+id/pNormal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:background="#000"
         android:padding="10dp"
-        android:text="Priority 100 Hint"
+        android:text="Priority Normal Hint"
         android:textColor="#fff" />
 
     <TextView
-        android:id="@+id/p200"
+        android:id="@+id/pHigh"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:background="#000"
         android:padding="10dp"
-        android:text="Priority 200 Hint"
+        android:text="Priority High Hint"
         android:textColor="#fff" />
 
     <TextView
