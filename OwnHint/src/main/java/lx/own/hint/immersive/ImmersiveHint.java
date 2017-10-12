@@ -53,6 +53,19 @@ final public class ImmersiveHint {
             endTransition();
         }
     };
+    private final View.OnAttachStateChangeListener mParentDetachListener = new View.OnAttachStateChangeListener() {
+        @Override
+        public void onViewAttachedToWindow(View v) {
+
+        }
+
+        @Override
+        public void onViewDetachedFromWindow(View v) {
+            v.removeOnAttachStateChangeListener(this);
+            if (mParent != null)
+                mParent.clear();
+        }
+    };
 
     public static ImmersiveHint make(@NonNull ImmersiveHintConfig.Type type, @NonNull Activity activity, @StringRes int messageRes) {
         return make(type, activity, messageRes, -1, null);
@@ -223,6 +236,8 @@ final public class ImmersiveHint {
 
     private void buildViews(Activity activity, String message, String actionText, ImmersiveHintConfig.Type type, HintAction action) {
         ViewGroup parent = findSuitableParent(activity.getWindow().getDecorView());
+        if (parent != null)
+            parent.addOnAttachStateChangeListener(mParentDetachListener);
         mParent = new WeakReference<ViewGroup>(parent);
         mView = (ImmersiveLayout) activity.getLayoutInflater().inflate(R.layout.immersive_layout, parent, false);
         mView.adaptContent(type, message, actionText, action);
