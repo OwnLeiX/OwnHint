@@ -33,6 +33,7 @@ import lx.own.hint.R;
 
 final public class ImmersiveHint {
     private static volatile int mStatusHeight = -1;
+    private static volatile WeakReference<ViewGroup> mFanciedParent;
 
     @IntDef({ImmersiveHintConfig.Priority.HIGH, ImmersiveHintConfig.Priority.NORMAL, ImmersiveHintConfig.Priority.LOW})
     public @interface HintPriority {
@@ -134,6 +135,21 @@ final public class ImmersiveHint {
         return fallback;
     }
 
+    private static WeakReference<ViewGroup> buildFanciedParent() {
+        if (mFanciedParent == null) {
+            synchronized (ImmersiveHint.class) {
+                if (mFanciedParent == null)
+                    mFanciedParent = new WeakReference<ViewGroup>(null);
+            }
+        }
+        return mFanciedParent;
+    }
+
+    private ImmersiveHint(@NonNull ImmersiveHintConfig.Type type, @NonNull Activity activity, @NonNull String message, @Nullable String actionText, HintAction action) {
+        this.mType = type;
+        buildViews(activity, message, actionText, type, action);
+    }
+
     @AnyThread
     public void show() {
         show(mType.config.showDuration);
@@ -230,17 +246,14 @@ final public class ImmersiveHint {
         return this;
     }
 
-    private ImmersiveHint(@NonNull ImmersiveHintConfig.Type type, @NonNull Activity activity, @NonNull String message, @Nullable String actionText, HintAction action) {
-        this.mType = type;
-        buildViews(activity, message, actionText, type, action);
-    }
-
     private void buildViews(Activity activity, String message, String actionText, ImmersiveHintConfig.Type type, HintAction action) {
         final ViewGroup parent = findSuitableParent(activity.getWindow().getDecorView());
-        if (parent != null)
+        if (parent != null && ViewCompat.isAttachedToWindow(parent)) {
             parent.addOnAttachStateChangeListener(mParentDetachListener);
-        final boolean usable = parent != null && ViewCompat.isAttachedToWindow(parent);
-        mParent = new WeakReference<ViewGroup>(usable ? parent : null);
+            mParent = new WeakReference<ViewGroup>(parent);
+        } else {
+            mParent = buildFanciedParent();//This just makes mParent != null;
+        }
         mView = (ImmersiveLayout) activity.getLayoutInflater().inflate(R.layout.immersive_layout, parent, false);
         mView.adaptContent(type, message, actionText, action);
         mView.setDetachedListener(new ImmersiveLayout.OnDetachedListener() {
