@@ -17,7 +17,6 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 
 public class ImmersiveHintManager {
-
     private static ImmersiveHintManager mInstance;
 
     public static ImmersiveHintManager $() {
@@ -85,7 +84,6 @@ public class ImmersiveHintManager {
         boolean returnValue = false;
         if (isCurrent(operate)) {
             cancelOperate(mCurrentRecorder, reason);
-            mCurrentRecorder = null;
             returnValue = true;
         } else {
             returnValue = removeInQueue(operate, mHighPriorRecorders)
@@ -110,10 +108,6 @@ public class ImmersiveHintManager {
         }
     }
 
-    void runOnUIThread(@NonNull Runnable r) {
-        mHandler.post(r);
-    }
-
     private boolean orderOperate(@NonNull OperateRecorder recorder) {
         boolean returnValue = false;
         mCurrentRecorder = recorder;
@@ -122,7 +116,6 @@ public class ImmersiveHintManager {
             operate.show();
             returnValue = true;
         } else {
-            mCurrentRecorder = null;
             final OperateRecorder next = pollRecorder();
             if (next != null)
                 orderOperate(next);
@@ -147,19 +140,6 @@ public class ImmersiveHintManager {
             delay = 100;
         mHandler.removeCallbacksAndMessages(recorder);
         mHandler.sendMessageDelayed(Message.obtain(mHandler, ImmersiveHintConfig.DismissReason.REASON_TIMEOUT, recorder), delay);
-    }
-
-    private boolean removeInQueue(@NonNull OperateInterface target, @NonNull LinkedBlockingQueue<OperateRecorder> queue) {
-        Iterator<OperateRecorder> iterator = queue.iterator();
-        while (iterator.hasNext()) {
-            OperateRecorder next = iterator.next();
-            if (next == null) continue;
-            if (next.is(target)) {
-                iterator.remove();
-                return true;
-            }
-        }
-        return false;
     }
 
     private void processOperateTimeout(@NonNull OperateRecorder recorder) {
@@ -188,6 +168,19 @@ public class ImmersiveHintManager {
         if (returnValue == null)
             returnValue = mLowPriorRecorders.poll();
         return returnValue;
+    }
+
+    private boolean removeInQueue(@NonNull OperateInterface target, @NonNull LinkedBlockingQueue<OperateRecorder> queue) {
+        Iterator<OperateRecorder> iterator = queue.iterator();
+        while (iterator.hasNext()) {
+            OperateRecorder next = iterator.next();
+            if (next == null) continue;
+            if (next.is(target)) {
+                iterator.remove();
+                return true;
+            }
+        }
+        return false;
     }
 
     private class OperateRecorder {

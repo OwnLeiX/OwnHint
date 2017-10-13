@@ -27,7 +27,8 @@ public interface ImmersiveHintConfig {
         int REASON_TIMEOUT = 1;
         int REASON_REPLACE = 2;
         int REASON_ACTION = 3;
-        int REASON_CODES = 4;
+        int REASON_DETACHED = 4;
+        int REASON_CODES = 5;
     }
 
     interface Priority {

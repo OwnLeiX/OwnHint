@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.os.Build;
 import android.os.Looper;
-import android.support.annotation.AnyThread;
 import android.support.annotation.ColorInt;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.IntDef;
@@ -34,6 +33,8 @@ import lx.own.hint.R;
 final public class ImmersiveHint {
     private static volatile int mStatusHeight = -1;
     private static volatile WeakReference<ViewGroup> mFanciedParent;
+    private Animation mLayOutAnim;
+    private Animation mLayInAnim;
 
     @IntDef({ImmersiveHintConfig.Priority.HIGH, ImmersiveHintConfig.Priority.NORMAL, ImmersiveHintConfig.Priority.LOW})
     public @interface HintPriority {
@@ -51,7 +52,7 @@ final public class ImmersiveHint {
 
         @Override
         public void dismiss(int reason) {
-            endTransition();
+            endTransition(reason);
         }
     };
     private final View.OnAttachStateChangeListener mParentDetachListener = new View.OnAttachStateChangeListener() {
@@ -63,8 +64,32 @@ final public class ImmersiveHint {
         @Override
         public void onViewDetachedFromWindow(View v) {
             v.removeOnAttachStateChangeListener(this);
+            if (mView.getParent() == v) {
+                mView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        cancelLayAnim();
+                        dismiss(ImmersiveHintConfig.DismissReason.REASON_DETACHED);
+                    }
+                });
+            }
             if (mParent.get() == v)
                 mParent.clear();
+        }
+    };
+    private final ImmersiveLayout.OnDetachedListener mViewDetachListener = new ImmersiveLayout.OnDetachedListener() {
+        @Override
+        public void onDetachedFromWindow(View view) {
+            if (mView.getParent() != null) {
+                mView.setDetachedListener(null);
+                mView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        cancelLayAnim();
+                        dismiss(ImmersiveHintConfig.DismissReason.REASON_DETACHED);
+                    }
+                });
+            }
         }
     };
 
@@ -149,17 +174,15 @@ final public class ImmersiveHint {
         buildViews(activity, message, actionText, type, action);
     }
 
-    @AnyThread
     public void show() {
         show(mType.config.showDuration);
     }
 
-    @AnyThread
     private void show(final long duration) {
         if (Looper.myLooper() == Looper.getMainLooper()) {
             ImmersiveHintManager.$().enqueue(mOperate, duration, mPriority);
         } else {
-            ImmersiveHintManager.$().runOnUIThread(new Runnable() {
+            mView.post(new Runnable() {
                 @Override
                 public void run() {
                     ImmersiveHintManager.$().enqueue(mOperate, duration, mPriority);
@@ -168,17 +191,15 @@ final public class ImmersiveHint {
         }
     }
 
-    @AnyThread
     public void dismiss() {
         dismiss(ImmersiveHintConfig.DismissReason.REASON_CODES);
     }
 
-    @AnyThread
     private void dismiss(final int reason) {
         if (Looper.myLooper() == Looper.getMainLooper()) {
             ImmersiveHintManager.$().cancel(mOperate, reason);
         } else {
-            ImmersiveHintManager.$().runOnUIThread(new Runnable() {
+            mView.post(new Runnable() {
                 @Override
                 public void run() {
                     ImmersiveHintManager.$().cancel(mOperate, reason);
@@ -255,13 +276,7 @@ final public class ImmersiveHint {
         }
         mView = (ImmersiveLayout) activity.getLayoutInflater().inflate(R.layout.immersive_layout, parent, false);
         mView.adaptContent(type, message, actionText, action);
-        mView.setDetachedListener(new ImmersiveLayout.OnDetachedListener() {
-            @Override
-            public void onDetachedFromWindow(View view) {
-                mView.setDetachedListener(null);
-                dismiss();
-            }
-        });
+        mView.setDetachedListener(mViewDetachListener);
         supportHeight(mView);
     }
 
@@ -286,8 +301,8 @@ final public class ImmersiveHint {
         }
     }
 
-    private void endTransition() {
-        animateOut();
+    private void endTransition(int reason) {
+        animateOut(reason);
     }
 
     private void inspectOverallModel() {
@@ -308,15 +323,16 @@ final public class ImmersiveHint {
     }
 
     private void animateIn() {
-        Animation anim = new TranslateAnimation(
+        mLayInAnim = new TranslateAnimation(
                 Animation.RELATIVE_TO_SELF, 0f,
                 Animation.RELATIVE_TO_SELF, 0f,
                 Animation.RELATIVE_TO_SELF, -1.0f,
                 Animation.RELATIVE_TO_SELF, 0f);
-        anim.setDuration(mType.config.animDuration);
-        anim.setAnimationListener(new Animation.AnimationListener() {
+        mLayInAnim.setDuration(mType.config.animDuration);
+        mLayInAnim.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationEnd(Animation animation) {
+                mLayInAnim = null;
                 dispatchShown();
             }
 
@@ -328,31 +344,36 @@ final public class ImmersiveHint {
             public void onAnimationRepeat(Animation animation) {
             }
         });
-        mView.startAnimation(anim);
+        mView.startAnimation(mLayInAnim);
     }
 
-    private void animateOut() {
-        Animation anim = new TranslateAnimation(
-                Animation.RELATIVE_TO_SELF, 0f,
-                Animation.RELATIVE_TO_SELF, 0f,
-                Animation.RELATIVE_TO_SELF, 0f,
-                Animation.RELATIVE_TO_SELF, -1.0f);
-        anim.setDuration(mType.config.animDuration);
-        anim.setAnimationListener(new Animation.AnimationListener() {
-            @Override
-            public void onAnimationEnd(Animation animation) {
-                dispatchHidden();
-            }
+    private void animateOut(int reason) {
+        if (reason == ImmersiveHintConfig.DismissReason.REASON_DETACHED) {
+            dispatchHidden();
+        } else {
+            mLayOutAnim = new TranslateAnimation(
+                    Animation.RELATIVE_TO_SELF, 0f,
+                    Animation.RELATIVE_TO_SELF, 0f,
+                    Animation.RELATIVE_TO_SELF, 0f,
+                    Animation.RELATIVE_TO_SELF, -1.0f);
+            mLayOutAnim.setDuration(mType.config.animDuration);
+            mLayOutAnim.setAnimationListener(new Animation.AnimationListener() {
+                @Override
+                public void onAnimationEnd(Animation animation) {
+                    mLayOutAnim = null;
+                    dispatchHidden();
+                }
 
-            @Override
-            public void onAnimationStart(Animation animation) {
-            }
+                @Override
+                public void onAnimationStart(Animation animation) {
+                }
 
-            @Override
-            public void onAnimationRepeat(Animation animation) {
-            }
-        });
-        mView.startAnimation(anim);
+                @Override
+                public void onAnimationRepeat(Animation animation) {
+                }
+            });
+            mView.startAnimation(mLayOutAnim);
+        }
     }
 
     private void dispatchShown() {
@@ -363,7 +384,20 @@ final public class ImmersiveHint {
         ImmersiveHintManager.$().processOperateHidden(mOperate);
         final ViewParent parent = mView.getParent();
         if (parent instanceof ViewGroup) {
+            mView.setDetachedListener(null);
+            ((ViewGroup) parent).removeOnAttachStateChangeListener(mParentDetachListener);
             ((ViewGroup) parent).removeView(mView);
         }
+    }
+
+    private void cancelLayAnim() {
+        final Animation layInAnim = this.mLayInAnim;
+        this.mLayInAnim = null;
+        if (layInAnim != null)
+            layInAnim.cancel();
+        final Animation layOutAnim = this.mLayOutAnim;
+        this.mLayOutAnim = null;
+        if (layOutAnim != null)
+            layOutAnim.cancel();
     }
 }
