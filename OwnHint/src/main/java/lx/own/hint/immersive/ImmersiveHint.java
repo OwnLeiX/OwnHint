@@ -57,8 +57,7 @@ final public class ImmersiveHint {
     private final View.OnAttachStateChangeListener mParentDetachListener = new View.OnAttachStateChangeListener() {
         @Override
         public void onViewAttachedToWindow(View v) {
-            if (mParent.get() == null && v instanceof ViewGroup)
-                mParent = new WeakReference<ViewGroup>((ViewGroup) v);
+
         }
 
         @Override
