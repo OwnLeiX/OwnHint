@@ -30,9 +30,11 @@ import lx.own.hint.R;
 
 final public class ImmersiveHint {
 
-    private static final int FLAG_DISMISS_BY_ACTION = 1;
+    private static final int FLAG_AUTO_DISMISS = 1;
     private static final int FLAG_ACTION_EXECUTED = 1 << 1;
-    private static final int FLAG_IS_ANIMATING = 1 << 2;
+    private static final int FLAG_IN_ANIMATING = 1 << 2;
+    private static final int FLAG_OUT_ANIMATING = 1 << 3;
+    private static final int FLAG_REPLACE_WAITING = 1 << 4;
 
     private static volatile int mStatusHeight = -1;
     private static volatile WeakReference<ViewGroup> mFanciedParent;
@@ -115,7 +117,7 @@ final public class ImmersiveHint {
     }
 
     private int mFlags;
-    private int mPriority = ImmersiveConfig.Priority.NORMAL;
+    private int mPriority;
     private ImmersiveConfig.Type mType;
     private WeakReference<ViewGroup> mParent;
     private WeakReference<Activity> mActivity;
@@ -128,6 +130,8 @@ final public class ImmersiveHint {
     private final View.OnClickListener mClickListener;
 
     {
+        mFlags = 0;
+        mPriority = ImmersiveConfig.Priority.NORMAL;
         this.mOperate = new ImmersiveHintManager.OperateInterface() {
             @Override
             public void show() {
@@ -183,7 +187,7 @@ final public class ImmersiveHint {
                     mFlags |= FLAG_ACTION_EXECUTED;
                     mAction.onAction();
                 }
-                if ((mFlags & FLAG_DISMISS_BY_ACTION) == FLAG_DISMISS_BY_ACTION)
+                if ((mFlags & FLAG_AUTO_DISMISS) == FLAG_AUTO_DISMISS)
                     dismiss(ImmersiveConfig.DismissReason.REASON_ACTION);
             }
         };
@@ -275,9 +279,9 @@ final public class ImmersiveHint {
 
     public ImmersiveHint redefineActionDismiss(boolean dismissByAction) {
         if (dismissByAction) {
-            mFlags |= FLAG_DISMISS_BY_ACTION;
+            mFlags |= FLAG_AUTO_DISMISS;
         } else {
-            mFlags &= ~FLAG_DISMISS_BY_ACTION;
+            mFlags &= ~FLAG_AUTO_DISMISS;
         }
         return this;
     }
@@ -288,9 +292,9 @@ final public class ImmersiveHint {
         this.mAction = action;
         final boolean dismissByAction = mType.config.actionDismiss;
         if (dismissByAction) {
-            mFlags |= FLAG_DISMISS_BY_ACTION;
+            mFlags |= FLAG_AUTO_DISMISS;
         } else {
-            mFlags &= ~FLAG_DISMISS_BY_ACTION;
+            mFlags &= ~FLAG_AUTO_DISMISS;
         }
     }
 
@@ -335,7 +339,11 @@ final public class ImmersiveHint {
                 || !ImmersiveHintManager.$().isActivityRunning(this.mActivity.get())) {
             dispatchHidden();
         } else {
-            animateOut(reason);
+            if ((mFlags & FLAG_IN_ANIMATING) == FLAG_IN_ANIMATING) {
+                mFlags |= FLAG_REPLACE_WAITING;
+            } else {
+                animateOut();
+            }
         }
     }
 
@@ -358,6 +366,8 @@ final public class ImmersiveHint {
     }
 
     private void animateIn() {
+        if ((mFlags & FLAG_IN_ANIMATING) == FLAG_IN_ANIMATING)
+            return;
         mLayInAnim = new TranslateAnimation(
                 Animation.RELATIVE_TO_SELF, 0f,
                 Animation.RELATIVE_TO_SELF, 0f,
@@ -368,11 +378,18 @@ final public class ImmersiveHint {
             @Override
             public void onAnimationEnd(Animation animation) {
                 mLayInAnim = null;
-                dispatchShown();
+                mFlags &= ~FLAG_IN_ANIMATING;
+                if ((mFlags & FLAG_REPLACE_WAITING) == FLAG_REPLACE_WAITING) {
+                    mFlags &= ~FLAG_REPLACE_WAITING;
+                    animateOut();
+                } else {
+                    dispatchShown();
+                }
             }
 
             @Override
             public void onAnimationStart(Animation animation) {
+                mFlags |= FLAG_IN_ANIMATING;
             }
 
             @Override
@@ -382,7 +399,9 @@ final public class ImmersiveHint {
         mView.startAnimation(mLayInAnim);
     }
 
-    private void animateOut(int reason) {
+    private void animateOut() {
+        if ((mFlags & FLAG_OUT_ANIMATING) == FLAG_OUT_ANIMATING)
+            return;
         mLayOutAnim = new TranslateAnimation(
                 Animation.RELATIVE_TO_SELF, 0f,
                 Animation.RELATIVE_TO_SELF, 0f,
@@ -393,11 +412,13 @@ final public class ImmersiveHint {
             @Override
             public void onAnimationEnd(Animation animation) {
                 mLayOutAnim = null;
+                mFlags &= ~FLAG_OUT_ANIMATING;
                 dispatchHidden();
             }
 
             @Override
             public void onAnimationStart(Animation animation) {
+                mFlags |= FLAG_OUT_ANIMATING;
             }
 
             @Override
@@ -430,5 +451,6 @@ final public class ImmersiveHint {
         this.mLayOutAnim = null;
         if (layOutAnim != null)
             layOutAnim.cancel();
+        mFlags &= ~(FLAG_IN_ANIMATING | FLAG_OUT_ANIMATING);
     }
 }

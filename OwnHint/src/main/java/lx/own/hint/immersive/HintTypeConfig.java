@@ -39,7 +39,7 @@ public class HintTypeConfig {
     int paddingEndsVertical = 10;
     boolean transmissionTouchEvent = false;
     //other
-    long showDuration = 5000L;
+    long showDuration = 2000L;
     long animDuration = 500L;
 
     OverallModelSupporter overallModelSupporter;
