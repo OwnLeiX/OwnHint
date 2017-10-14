@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
 import android.os.Build;
-import android.os.Looper;
 import android.support.annotation.ColorInt;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.IntDef;
@@ -43,6 +42,7 @@ final public class ImmersiveHint {
     int mPriority = ImmersiveHintConfig.Priority.NORMAL;
     private final ImmersiveHintConfig.Type mType;
     private WeakReference<ViewGroup> mParent;
+    private WeakReference<Activity> mActivity;
     private ImmersiveLayout mView;
     private final ImmersiveHintManager.OperateInterface mOperate = new ImmersiveHintManager.OperateInterface() {
         @Override
@@ -110,7 +110,7 @@ final public class ImmersiveHint {
         return new ImmersiveHint(type, activity, message, actionText, action);
     }
 
-    private static void supportHeight(View view) {
+    private static void viewHeightCompat(View view) {
         int statusBarHeight = getStatusBarHeight(view.getContext());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             view.setPadding(view.getPaddingLeft()
@@ -171,6 +171,7 @@ final public class ImmersiveHint {
 
     private ImmersiveHint(@NonNull ImmersiveHintConfig.Type type, @NonNull Activity activity, @NonNull String message, @Nullable String actionText, HintAction action) {
         this.mType = type;
+        this.mActivity = new WeakReference<Activity>(activity);
         buildViews(activity, message, actionText, type, action);
     }
 
@@ -179,16 +180,7 @@ final public class ImmersiveHint {
     }
 
     private void show(final long duration) {
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            ImmersiveHintManager.$().enqueue(mOperate, duration, mPriority);
-        } else {
-            mView.post(new Runnable() {
-                @Override
-                public void run() {
-                    ImmersiveHintManager.$().enqueue(mOperate, duration, mPriority);
-                }
-            });
-        }
+        ImmersiveHintManager.$().enqueue(mOperate, duration, mPriority);
     }
 
     public void dismiss() {
@@ -196,16 +188,7 @@ final public class ImmersiveHint {
     }
 
     private void dismiss(final int reason) {
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            ImmersiveHintManager.$().cancel(mOperate, reason);
-        } else {
-            mView.post(new Runnable() {
-                @Override
-                public void run() {
-                    ImmersiveHintManager.$().cancel(mOperate, reason);
-                }
-            });
-        }
+        ImmersiveHintManager.$().cancel(mOperate, reason);
     }
 
     public ImmersiveHint withIcon(boolean show) {
@@ -218,12 +201,12 @@ final public class ImmersiveHint {
         return this;
     }
 
-    public ImmersiveHint customIconDrawable(@DrawableRes int resId) {
+    public ImmersiveHint redefineIconDrawable(@DrawableRes int resId) {
         mView.mIconView.setImageResource(resId);
         return this;
     }
 
-    public ImmersiveHint customIconSize(int radius) {
+    public ImmersiveHint redefineIconSize(int radius) {
         ViewGroup.LayoutParams params = mView.mIconView.getLayoutParams();
         params.width = radius;
         params.height = radius;
@@ -231,37 +214,37 @@ final public class ImmersiveHint {
         return this;
     }
 
-    public ImmersiveHint customBackgroundColor(@ColorInt int color) {
+    public ImmersiveHint redefineBackgroundColor(@ColorInt int color) {
         mView.setBackgroundColor(color);
         return this;
     }
 
-    public ImmersiveHint customBackgroundDrawable(@DrawableRes int resId) {
+    public ImmersiveHint redefineBackgroundDrawable(@DrawableRes int resId) {
         mView.setBackgroundResource(resId);
         return this;
     }
 
-    public ImmersiveHint customMessageTextSize(int size) {
+    public ImmersiveHint redefineMessageTextSize(int size) {
         mView.mMessageView.setTextSize(size);
         return this;
     }
 
-    public ImmersiveHint customMessageTextColor(@ColorInt int color) {
+    public ImmersiveHint redefineMessageTextColor(@ColorInt int color) {
         mView.mMessageView.setTextColor(color);
         return this;
     }
 
-    public ImmersiveHint customActionTextSize(int size) {
+    public ImmersiveHint redefineActionTextSize(int size) {
         mView.mActionView.setTextSize(size);
         return this;
     }
 
-    public ImmersiveHint customActionTextColor(@ColorInt int color) {
+    public ImmersiveHint redefineActionTextColor(@ColorInt int color) {
         mView.mActionView.setTextColor(color);
         return this;
     }
 
-    public ImmersiveHint customActionBackgroundDrawable(@DrawableRes int resId) {
+    public ImmersiveHint redefineActionBackgroundDrawable(@DrawableRes int resId) {
         mView.mActionView.setBackgroundResource(resId);
         return this;
     }
@@ -277,12 +260,12 @@ final public class ImmersiveHint {
         mView = (ImmersiveLayout) activity.getLayoutInflater().inflate(R.layout.immersive_layout, parent, false);
         mView.adaptContent(type, message, actionText, action);
         mView.setDetachedListener(mViewDetachListener);
-        supportHeight(mView);
+        viewHeightCompat(mView);
     }
 
     private void beginTransition() {
         ViewGroup parent = mParent.get();
-        if (parent == null) {
+        if (parent == null || !ImmersiveHintManager.$().isActivityRunning(this.mActivity.get())) {
             inspectOverallModel();
         } else {
             if (mView.getParent() == null)
@@ -302,7 +285,13 @@ final public class ImmersiveHint {
     }
 
     private void endTransition(int reason) {
-        animateOut(reason);
+        if (reason == ImmersiveHintConfig.DismissReason.REASON_DETACHED
+                || mView.getVisibility() != View.VISIBLE
+                || !ImmersiveHintManager.$().isActivityRunning(this.mActivity.get())) {
+            dispatchHidden();
+        } else {
+            animateOut(reason);
+        }
     }
 
     private void inspectOverallModel() {
@@ -313,6 +302,7 @@ final public class ImmersiveHint {
                 final ViewGroup parent = findSuitableParent(act.getWindow().getDecorView());
                 if (parent != null && ViewCompat.isAttachedToWindow(parent)) {
                     parent.addOnAttachStateChangeListener(mParentDetachListener);
+                    mActivity = new WeakReference<Activity>(act);
                     mParent = new WeakReference<ViewGroup>(parent);
                     beginTransition();
                     return;
@@ -348,32 +338,29 @@ final public class ImmersiveHint {
     }
 
     private void animateOut(int reason) {
-        if (reason == ImmersiveHintConfig.DismissReason.REASON_DETACHED) {
-            dispatchHidden();
-        } else {
-            mLayOutAnim = new TranslateAnimation(
-                    Animation.RELATIVE_TO_SELF, 0f,
-                    Animation.RELATIVE_TO_SELF, 0f,
-                    Animation.RELATIVE_TO_SELF, 0f,
-                    Animation.RELATIVE_TO_SELF, -1.0f);
-            mLayOutAnim.setDuration(mType.config.animDuration);
-            mLayOutAnim.setAnimationListener(new Animation.AnimationListener() {
-                @Override
-                public void onAnimationEnd(Animation animation) {
-                    mLayOutAnim = null;
-                    dispatchHidden();
-                }
 
-                @Override
-                public void onAnimationStart(Animation animation) {
-                }
+        mLayOutAnim = new TranslateAnimation(
+                Animation.RELATIVE_TO_SELF, 0f,
+                Animation.RELATIVE_TO_SELF, 0f,
+                Animation.RELATIVE_TO_SELF, 0f,
+                Animation.RELATIVE_TO_SELF, -1.0f);
+        mLayOutAnim.setDuration(mType.config.animDuration);
+        mLayOutAnim.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                mLayOutAnim = null;
+                dispatchHidden();
+            }
 
-                @Override
-                public void onAnimationRepeat(Animation animation) {
-                }
-            });
-            mView.startAnimation(mLayOutAnim);
-        }
+            @Override
+            public void onAnimationStart(Animation animation) {
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+            }
+        });
+        mView.startAnimation(mLayOutAnim);
     }
 
     private void dispatchShown() {

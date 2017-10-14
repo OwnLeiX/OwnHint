@@ -27,8 +27,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 ImmersiveHint.make(ImmersiveHintConfig.Type.Hint, this, "this is Low", "action", null)
                         .priority(ImmersiveHintConfig.Priority.LOW)
                         .withIcon(true)
-                        .customIconSize(100)
-                        .customIconDrawable(R.mipmap.ic_launcher_round)
+                        .redefineIconSize(100)
+                        .redefineIconDrawable(R.mipmap.ic_launcher_round)
                         .show();
                 break;
             case R.id.pNormal:
