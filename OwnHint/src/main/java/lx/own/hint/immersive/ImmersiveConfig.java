@@ -9,16 +9,16 @@ import android.support.annotation.NonNull;
  *         Created on 2017/10/11.
  */
 
-public interface ImmersiveHintConfig {
+public interface ImmersiveConfig {
     enum Type {
-        Warning(CustomConfig.defaultConfig), Hint(CustomConfig.defaultConfig);
-        CustomConfig config;
+        Warning(HintTypeConfig.defaultConfig), Hint(HintTypeConfig.defaultConfig);
+        HintTypeConfig config;
 
-        Type(CustomConfig config) {
+        Type(HintTypeConfig config) {
             this.config = config;
         }
 
-        public synchronized void custom(@NonNull CustomConfig params) {
+        synchronized void custom(@NonNull HintTypeConfig params) {
             this.config = params;
         }
     }
@@ -28,7 +28,7 @@ public interface ImmersiveHintConfig {
         int REASON_REPLACE = 2;
         int REASON_ACTION = 3;
         int REASON_DETACHED = 4;
-        int REASON_CODES = 5;
+        int REASON_ACTIVE = 5;
     }
 
     interface Priority {

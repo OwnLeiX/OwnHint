@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.view.View;
 
 import lx.own.hint.immersive.ImmersiveHint;
-import lx.own.hint.immersive.ImmersiveHintConfig;
+import lx.own.hint.immersive.ImmersiveConfig;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -24,18 +24,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.pLow:
-                ImmersiveHint.make(ImmersiveHintConfig.Type.Hint, this, "this is Low", "action", null)
-                        .priority(ImmersiveHintConfig.Priority.LOW)
+                ImmersiveHint.make(ImmersiveConfig.Type.Hint, this, "this is Low", "action", null)
+                        .priority(ImmersiveConfig.Priority.LOW)
                         .withIcon(true)
                         .redefineIconSize(100)
                         .redefineIconDrawable(R.mipmap.ic_launcher_round)
                         .show();
                 break;
             case R.id.pNormal:
-                ImmersiveHint.make(ImmersiveHintConfig.Type.Hint, this, "this is Normal").priority(ImmersiveHintConfig.Priority.NORMAL).show();
+                ImmersiveHint.make(ImmersiveConfig.Type.Hint, this, "this is Normal").priority(ImmersiveConfig.Priority.NORMAL).show();
                 break;
             case R.id.pHigh:
-                ImmersiveHint.make(ImmersiveHintConfig.Type.Warning, this, "this is High").priority(ImmersiveHintConfig.Priority.HIGH).show();
+                ImmersiveHint.make(ImmersiveConfig.Type.Warning, this, "this is High").priority(ImmersiveConfig.Priority.HIGH).show();
                 break;
             case R.id.open:
                 startActivity(new Intent(this, SubActivity.class));

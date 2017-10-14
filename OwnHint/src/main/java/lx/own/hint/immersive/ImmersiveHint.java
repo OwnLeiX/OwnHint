@@ -6,7 +6,6 @@ import android.content.res.Resources;
 import android.os.Build;
 import android.support.annotation.ColorInt;
 import android.support.annotation.DrawableRes;
-import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
@@ -30,83 +29,28 @@ import lx.own.hint.R;
  */
 
 final public class ImmersiveHint {
+
+    private static final int FLAG_DISMISS_BY_ACTION = 1;
+    private static final int FLAG_ACTION_EXECUTED = 1 << 1;
+    private static final int FLAG_IS_ANIMATING = 1 << 2;
+
     private static volatile int mStatusHeight = -1;
     private static volatile WeakReference<ViewGroup> mFanciedParent;
-    private Animation mLayOutAnim;
-    private Animation mLayInAnim;
 
-    @IntDef({ImmersiveHintConfig.Priority.HIGH, ImmersiveHintConfig.Priority.NORMAL, ImmersiveHintConfig.Priority.LOW})
-    public @interface HintPriority {
-    }
-
-    int mPriority = ImmersiveHintConfig.Priority.NORMAL;
-    private final ImmersiveHintConfig.Type mType;
-    private WeakReference<ViewGroup> mParent;
-    private WeakReference<Activity> mActivity;
-    private ImmersiveLayout mView;
-    private final ImmersiveHintManager.OperateInterface mOperate = new ImmersiveHintManager.OperateInterface() {
-        @Override
-        public void show() {
-            beginTransition();
-        }
-
-        @Override
-        public void dismiss(int reason) {
-            endTransition(reason);
-        }
-    };
-    private final View.OnAttachStateChangeListener mParentDetachListener = new View.OnAttachStateChangeListener() {
-        @Override
-        public void onViewAttachedToWindow(View v) {
-
-        }
-
-        @Override
-        public void onViewDetachedFromWindow(View v) {
-            v.removeOnAttachStateChangeListener(this);
-            if (mView.getParent() == v) {
-                mView.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        cancelLayAnim();
-                        dismiss(ImmersiveHintConfig.DismissReason.REASON_DETACHED);
-                    }
-                });
-            }
-            if (mParent.get() == v)
-                mParent.clear();
-        }
-    };
-    private final ImmersiveLayout.OnDetachedListener mViewDetachListener = new ImmersiveLayout.OnDetachedListener() {
-        @Override
-        public void onDetachedFromWindow(View view) {
-            if (mView.getParent() != null) {
-                mView.setDetachedListener(null);
-                mView.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        cancelLayAnim();
-                        dismiss(ImmersiveHintConfig.DismissReason.REASON_DETACHED);
-                    }
-                });
-            }
-        }
-    };
-
-    public static ImmersiveHint make(@NonNull ImmersiveHintConfig.Type type, @NonNull Activity activity, @StringRes int messageRes) {
+    public static ImmersiveHint make(@NonNull ImmersiveConfig.Type type, @NonNull Activity activity, @StringRes int messageRes) {
         return make(type, activity, messageRes, -1, null);
     }
 
-    public static ImmersiveHint make(@NonNull ImmersiveHintConfig.Type type, @NonNull Activity activity, @NonNull String message) {
+    public static ImmersiveHint make(@NonNull ImmersiveConfig.Type type, @NonNull Activity activity, @NonNull String message) {
         return make(type, activity, message, "", null);
     }
 
-    public static ImmersiveHint make(@NonNull ImmersiveHintConfig.Type type, @NonNull Activity activity, @StringRes int messageRes, @StringRes int actionRes, HintAction action) {
+    public static ImmersiveHint make(@NonNull ImmersiveConfig.Type type, @NonNull Activity activity, @StringRes int messageRes, @StringRes int actionRes, HintAction action) {
         Resources resources = activity.getResources();
         return new ImmersiveHint(type, activity, resources.getString(messageRes), actionRes == -1 ? "" : resources.getString(actionRes), action);
     }
 
-    public static ImmersiveHint make(@NonNull ImmersiveHintConfig.Type type, @NonNull Activity activity, @NonNull String message, @Nullable String actionText, HintAction action) {
+    public static ImmersiveHint make(@NonNull ImmersiveConfig.Type type, @NonNull Activity activity, @NonNull String message, @Nullable String actionText, HintAction action) {
         return new ImmersiveHint(type, activity, message, actionText, action);
     }
 
@@ -134,6 +78,7 @@ final public class ImmersiveHint {
                             mStatusHeight = context.getResources().getDimensionPixelSize(resourceId);
                         }
                     } catch (Exception e) {
+                        return 0;
                     }
                 }
             }
@@ -163,16 +108,90 @@ final public class ImmersiveHint {
         if (mFanciedParent == null) {
             synchronized (ImmersiveHint.class) {
                 if (mFanciedParent == null)
-                    mFanciedParent = new WeakReference<ViewGroup>(null);
+                    mFanciedParent = new WeakReference<>(null);
             }
         }
         return mFanciedParent;
     }
 
-    private ImmersiveHint(@NonNull ImmersiveHintConfig.Type type, @NonNull Activity activity, @NonNull String message, @Nullable String actionText, HintAction action) {
-        this.mType = type;
-        this.mActivity = new WeakReference<Activity>(activity);
-        buildViews(activity, message, actionText, type, action);
+    private int mFlags;
+    private int mPriority = ImmersiveConfig.Priority.NORMAL;
+    private ImmersiveConfig.Type mType;
+    private WeakReference<ViewGroup> mParent;
+    private WeakReference<Activity> mActivity;
+    private ImmersiveLayout mView;
+    private Animation mLayOutAnim, mLayInAnim;
+    private HintAction mAction;
+    private final ImmersiveHintManager.OperateInterface mOperate;
+    private final View.OnAttachStateChangeListener mParentDetachListener;
+    private final ImmersiveLayout.OnDetachedListener mViewDetachListener;
+    private final View.OnClickListener mClickListener;
+
+    {
+        this.mOperate = new ImmersiveHintManager.OperateInterface() {
+            @Override
+            public void show() {
+                beginTransition();
+            }
+
+            @Override
+            public void dismiss(int reason) {
+                endTransition(reason);
+            }
+        };
+        this.mParentDetachListener = new View.OnAttachStateChangeListener() {
+            @Override
+            public void onViewAttachedToWindow(View v) {
+
+            }
+
+            @Override
+            public void onViewDetachedFromWindow(View v) {
+                v.removeOnAttachStateChangeListener(this);
+                if (mView.getParent() == v) {
+                    mView.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            cancelLayAnim();
+                            dismiss(ImmersiveConfig.DismissReason.REASON_DETACHED);
+                        }
+                    });
+                }
+                if (mParent.get() == v)
+                    mParent.clear();
+            }
+        };
+        this.mViewDetachListener = new ImmersiveLayout.OnDetachedListener() {
+            @Override
+            public void onDetachedFromWindow(View view) {
+                if (mView.getParent() != null) {
+                    mView.setDetachedListener(null);
+                    mView.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            cancelLayAnim();
+                            dismiss(ImmersiveConfig.DismissReason.REASON_DETACHED);
+                        }
+                    });
+                }
+            }
+        };
+        this.mClickListener = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mAction != null && (mFlags & FLAG_ACTION_EXECUTED) == 0) {
+                    mFlags |= FLAG_ACTION_EXECUTED;
+                    mAction.onAction();
+                }
+                if ((mFlags & FLAG_DISMISS_BY_ACTION) == FLAG_DISMISS_BY_ACTION)
+                    dismiss(ImmersiveConfig.DismissReason.REASON_ACTION);
+            }
+        };
+    }
+
+    private ImmersiveHint(@NonNull ImmersiveConfig.Type type, @NonNull Activity activity, @NonNull String message, @Nullable String actionText, HintAction action) {
+        recordParams(activity, type, action);
+        buildViews(activity, message, actionText, type);
     }
 
     public void show() {
@@ -184,7 +203,7 @@ final public class ImmersiveHint {
     }
 
     public void dismiss() {
-        dismiss(ImmersiveHintConfig.DismissReason.REASON_CODES);
+        dismiss(ImmersiveConfig.DismissReason.REASON_ACTIVE);
     }
 
     private void dismiss(final int reason) {
@@ -196,7 +215,7 @@ final public class ImmersiveHint {
         return this;
     }
 
-    public ImmersiveHint priority(@HintPriority int priority) {
+    public ImmersiveHint priority(@Priority int priority) {
         this.mPriority = priority;
         return this;
     }
@@ -249,16 +268,42 @@ final public class ImmersiveHint {
         return this;
     }
 
-    private void buildViews(Activity activity, String message, String actionText, ImmersiveHintConfig.Type type, HintAction action) {
+    public ImmersiveHint redefineTransmissionTouchEvent(boolean transmission) {
+        mView.setClickable(!transmission);
+        return this;
+    }
+
+    public ImmersiveHint redefineActionDismiss(boolean dismissByAction) {
+        if (dismissByAction) {
+            mFlags |= FLAG_DISMISS_BY_ACTION;
+        } else {
+            mFlags &= ~FLAG_DISMISS_BY_ACTION;
+        }
+        return this;
+    }
+
+    private void recordParams(Activity activity, ImmersiveConfig.Type type, HintAction action) {
+        this.mType = type;
+        this.mActivity = new WeakReference<>(activity);
+        this.mAction = action;
+        final boolean dismissByAction = mType.config.actionDismiss;
+        if (dismissByAction) {
+            mFlags |= FLAG_DISMISS_BY_ACTION;
+        } else {
+            mFlags &= ~FLAG_DISMISS_BY_ACTION;
+        }
+    }
+
+    private void buildViews(Activity activity, String message, String actionText, ImmersiveConfig.Type type) {
         final ViewGroup parent = findSuitableParent(activity.getWindow().getDecorView());
         if (parent != null && ViewCompat.isAttachedToWindow(parent)) {
             parent.addOnAttachStateChangeListener(mParentDetachListener);
-            mParent = new WeakReference<ViewGroup>(parent);
+            mParent = new WeakReference<>(parent);
         } else {
             mParent = buildFanciedParent();//This just makes mParent != null;
         }
         mView = (ImmersiveLayout) activity.getLayoutInflater().inflate(R.layout.immersive_layout, parent, false);
-        mView.adaptContent(type, message, actionText, action);
+        mView.adaptContent(type, message, actionText, mClickListener);
         mView.setDetachedListener(mViewDetachListener);
         viewHeightCompat(mView);
     }
@@ -285,7 +330,7 @@ final public class ImmersiveHint {
     }
 
     private void endTransition(int reason) {
-        if (reason == ImmersiveHintConfig.DismissReason.REASON_DETACHED
+        if (reason == ImmersiveConfig.DismissReason.REASON_DETACHED
                 || mView.getVisibility() != View.VISIBLE
                 || !ImmersiveHintManager.$().isActivityRunning(this.mActivity.get())) {
             dispatchHidden();
@@ -295,15 +340,15 @@ final public class ImmersiveHint {
     }
 
     private void inspectOverallModel() {
-        final CustomConfig.OverallModelSupporter supporter = mType.config.overallModelSupporter;
+        final HintTypeConfig.OverallModelSupporter supporter = mType.config.overallModelSupporter;
         if (supporter != null) {
-            final Activity act = supporter.supportNewActivity();
+            final Activity act = supporter.provideTopActivity();
             if (act != null && !act.isFinishing()) {
                 final ViewGroup parent = findSuitableParent(act.getWindow().getDecorView());
                 if (parent != null && ViewCompat.isAttachedToWindow(parent)) {
                     parent.addOnAttachStateChangeListener(mParentDetachListener);
-                    mActivity = new WeakReference<Activity>(act);
-                    mParent = new WeakReference<ViewGroup>(parent);
+                    mActivity = new WeakReference<>(act);
+                    mParent = new WeakReference<>(parent);
                     beginTransition();
                     return;
                 }
@@ -338,7 +383,6 @@ final public class ImmersiveHint {
     }
 
     private void animateOut(int reason) {
-
         mLayOutAnim = new TranslateAnimation(
                 Animation.RELATIVE_TO_SELF, 0f,
                 Animation.RELATIVE_TO_SELF, 0f,

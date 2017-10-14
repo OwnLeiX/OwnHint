@@ -21,19 +21,12 @@ import android.widget.TextView;
  *         Created on 2017/10/11.
  */
 
-final public class ImmersiveLayout extends LinearLayout implements View.OnClickListener {
+final public class ImmersiveLayout extends LinearLayout {
 
     private OnLayoutChangedListener mLayoutChangedListener;
     private OnDetachedListener mDetachedListener;
-    private HintAction mAction;
     ImageView mIconView;
     TextView mMessageView, mActionView;
-
-    @Override
-    public void onClick(View v) {
-        if (v == mActionView && mAction != null)
-            mAction.onAction();
-    }
 
     public ImmersiveLayout(Context context) {
         this(context, null);
@@ -61,12 +54,15 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
             mDetachedListener.onDetachedFromWindow(this);
     }
 
-    void adaptContent(@NonNull ImmersiveHintConfig.Type type, @Nullable String message, @Nullable String actionText, @Nullable HintAction action) {
+    void adaptContent(@NonNull ImmersiveConfig.Type type, @Nullable String message, @Nullable String actionText, @Nullable OnClickListener actionListener) {
         final Context context = getContext();
-        final CustomConfig config = type.config;
+        final HintTypeConfig config = type.config;
         final int paddingEndsHorizontal = config.paddingEndsHorizontal;
         final int paddingEndsVertical = config.paddingEndsVertical;
+        final boolean transmissionTouchEvent = config.transmissionTouchEvent;
+        final boolean hasAction = TextUtils.isEmpty(actionText);
         setPadding(paddingEndsHorizontal, paddingEndsVertical, paddingEndsHorizontal, paddingEndsVertical);
+        setClickable(!transmissionTouchEvent);
         mIconView = buildIconView(context, config);
         mMessageView = buildMessageView(context, config);
         mActionView = buildActionView(context, config);
@@ -80,14 +76,10 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
                 ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_YES);
         setBackgroundColor(config.backgroundColor);
         mMessageView.setText(message);
-        mAction = action;
-        if (TextUtils.isEmpty(actionText)) {
-            mActionView.setVisibility(View.GONE);
-            mActionView.setOnClickListener(null);
-        } else {
-            mActionView.setVisibility(View.VISIBLE);
+        mActionView.setVisibility(hasAction ? View.VISIBLE : View.GONE);
+        if (hasAction) {
             mActionView.setText(actionText);
-            mActionView.setOnClickListener(this);
+            mActionView.setOnClickListener(actionListener);
         }
     }
 
@@ -99,7 +91,7 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
         this.mDetachedListener = listener;
     }
 
-    private ImageView buildIconView(Context context, CustomConfig config) {
+    private ImageView buildIconView(Context context, HintTypeConfig config) {
         ImageView iconView = new ImageView(context);
         iconView.setScaleType(ImageView.ScaleType.FIT_CENTER);
         final int iconSize = config.iconSize;
@@ -116,7 +108,7 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
         return iconView;
     }
 
-    private TextView buildMessageView(Context context, CustomConfig config) {
+    private TextView buildMessageView(Context context, HintTypeConfig config) {
         TextView textView = new TextView(context);
         final int messageTextColor = config.messageTextColor;
         final int messageTextSize = config.messageTextSizeSp;
@@ -124,7 +116,6 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
         params.gravity = Gravity.CENTER_VERTICAL;
         params.weight = 1;
         textView.setLayoutParams(params);
-
         textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, messageTextSize);
         textView.setTextColor(messageTextColor);
         textView.setGravity(config.messageGravity);
@@ -133,7 +124,7 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
         return textView;
     }
 
-    private TextView buildActionView(Context context, CustomConfig config) {
+    private TextView buildActionView(Context context, HintTypeConfig config) {
         TextView textView = new TextView(context);
         final int actionTextSize = config.actionTextSizeSp;
         final int actionTextColor = config.actionTextColor;
@@ -145,7 +136,6 @@ final public class ImmersiveLayout extends LinearLayout implements View.OnClickL
         params.gravity = Gravity.CENTER_VERTICAL;
         params.leftMargin = actionLeftMargin;
         textView.setLayoutParams(params);
-
         textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, actionTextSize);
         textView.setTextColor(actionTextColor);
         textView.setGravity(Gravity.CENTER);

@@ -20,7 +20,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  *         Created on 2017/10/11.
  */
 
-public class ImmersiveHintManager {
+final public class ImmersiveHintManager {
     private static ImmersiveHintManager mInstance;
 
     public static ImmersiveHintManager $() {
@@ -36,20 +36,14 @@ public class ImmersiveHintManager {
     private ActivityManager mActivityManager;
     private final Handler mHandler;
     private volatile OperateRecorder mCurrentRecorder;
-    private final LinkedBlockingQueue<OperateRecorder> mHighPriorRecorders;
-    private final LinkedBlockingQueue<OperateRecorder> mNormalPriorRecorders;
-    private final LinkedBlockingQueue<OperateRecorder> mLowPriorRecorders;
+    private final LinkedBlockingQueue<OperateRecorder> mHighPriorRecorders, mNormalPriorRecorders, mLowPriorRecorders;
 
     private ImmersiveHintManager() {
         mHandler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message msg) {
-                try {
-                    if (msg.what == ImmersiveHintConfig.DismissReason.REASON_TIMEOUT)
-                        processOperateTimeout((OperateRecorder) msg.obj);
-                } catch (ClassCastException e) {
-
-                }
+                if (msg.what == ImmersiveConfig.DismissReason.REASON_TIMEOUT)
+                    processOperateTimeout((OperateRecorder) msg.obj);
             }
         };
         mHighPriorRecorders = new LinkedBlockingQueue<>();
@@ -57,19 +51,18 @@ public class ImmersiveHintManager {
         mLowPriorRecorders = new LinkedBlockingQueue<>();
     }
 
-    public void init(@NonNull Context context) {
+    public ImmersiveHintManager init(@NonNull Context context) {
         mActivityManager = (ActivityManager) context
                 .getSystemService(Context.ACTIVITY_SERVICE);
+        return this;
     }
 
-    public void initTypeHintConfig(@NonNull CustomConfig config) {
-        ImmersiveHintConfig.Type.Hint.custom(config);
+    public ImmersiveHintManager configure(@NonNull ImmersiveConfig.Type type, @NonNull HintTypeConfig config) {
+        type.custom(config);
+        return this;
     }
 
-    public void initTypeWarningConfig(@NonNull CustomConfig config) {
-        ImmersiveHintConfig.Type.Warning.custom(config);
-    }
-
+    @SuppressWarnings("deprecation")
     boolean isActivityRunning(@Nullable Activity activity) {
         if (activity == null)
             return false;
@@ -79,9 +72,9 @@ public class ImmersiveHintManager {
         if (runningTasks == null || runningTasks.size() < 1)
             return false;
         ActivityManager.RunningTaskInfo runningTask = runningTasks.get(0);
-        if (runningTask == null || runningTask.topActivity == null)
-            return false;
-        return runningTask.topActivity.getClassName().equals(activity.getClass().getName());
+        return runningTask != null
+                && runningTask.topActivity != null
+                && runningTask.topActivity.getClassName().equals(activity.getClass().getName());
     }
 
     void enqueue(@NonNull OperateInterface operate, long duration, int priority) {
@@ -93,7 +86,7 @@ public class ImmersiveHintManager {
         } else {
             final OperateRecorder next = new OperateRecorder(operate, duration, priority);
             if (mCurrentRecorder != null) {
-                if (mCurrentRecorder.priority >= priority || cancelOperate(mCurrentRecorder, ImmersiveHintConfig.DismissReason.REASON_REPLACE)) {
+                if (mCurrentRecorder.priority >= priority || cancelOperate(mCurrentRecorder, ImmersiveConfig.DismissReason.REASON_REPLACE)) {
                     offerRecorder(next);
                 } else {
                     orderOperate(next);
@@ -105,7 +98,7 @@ public class ImmersiveHintManager {
     }
 
     boolean cancel(@NonNull OperateInterface operate, int reason) {
-        boolean returnValue = false;
+        boolean returnValue;
         if (isCurrent(operate)) {
             cancelOperate(mCurrentRecorder, reason);
             returnValue = true;
@@ -163,12 +156,12 @@ public class ImmersiveHintManager {
         if (delay <= 0)
             delay = 100;
         mHandler.removeCallbacksAndMessages(recorder);
-        mHandler.sendMessageDelayed(Message.obtain(mHandler, ImmersiveHintConfig.DismissReason.REASON_TIMEOUT, recorder), delay);
+        mHandler.sendMessageDelayed(Message.obtain(mHandler, ImmersiveConfig.DismissReason.REASON_TIMEOUT, recorder), delay);
     }
 
     private void processOperateTimeout(@NonNull OperateRecorder recorder) {
         mHandler.removeCallbacksAndMessages(recorder);
-        cancelOperate(recorder, ImmersiveHintConfig.DismissReason.REASON_TIMEOUT);
+        cancelOperate(recorder, ImmersiveConfig.DismissReason.REASON_TIMEOUT);
     }
 
     private boolean isCurrent(@Nullable OperateInterface operate) {
@@ -176,9 +169,9 @@ public class ImmersiveHintManager {
     }
 
     private void offerRecorder(@NonNull OperateRecorder recorder) {
-        if (recorder.priority == ImmersiveHintConfig.Priority.HIGH) {
+        if (recorder.priority == ImmersiveConfig.Priority.HIGH) {
             mHighPriorRecorders.offer(recorder);
-        } else if (recorder.priority == ImmersiveHintConfig.Priority.NORMAL) {
+        } else if (recorder.priority == ImmersiveConfig.Priority.NORMAL) {
             mNormalPriorRecorders.offer(recorder);
         } else {
             mLowPriorRecorders.offer(recorder);
@@ -212,13 +205,13 @@ public class ImmersiveHintManager {
         private int priority;
         private long duration;
 
-        public OperateRecorder(@NonNull OperateInterface operate, long duration, int priority) {
+        private OperateRecorder(@NonNull OperateInterface operate, long duration, int priority) {
             this.operate = operate;
             this.duration = duration;
             this.priority = priority;
         }
 
-        public boolean is(@Nullable OperateInterface operate) {
+        private boolean is(@Nullable OperateInterface operate) {
             return this.operate == operate;
         }
     }
