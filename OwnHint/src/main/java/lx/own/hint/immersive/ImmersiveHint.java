@@ -132,7 +132,7 @@ final public class ImmersiveHint {
     {
         mFlags = 0;
         mPriority = ImmersiveConfig.Priority.NORMAL;
-        this.mOperate = new ImmersiveHintManager.OperateInterface() {
+        mOperate = new ImmersiveHintManager.OperateInterface() {
             @Override
             public void show() {
                 beginTransition();
@@ -143,7 +143,7 @@ final public class ImmersiveHint {
                 endTransition(reason);
             }
         };
-        this.mParentDetachListener = new View.OnAttachStateChangeListener() {
+        mParentDetachListener = new View.OnAttachStateChangeListener() {
             @Override
             public void onViewAttachedToWindow(View v) {
 
@@ -165,7 +165,7 @@ final public class ImmersiveHint {
                     mParent.clear();
             }
         };
-        this.mViewDetachListener = new ImmersiveLayout.OnDetachedListener() {
+        mViewDetachListener = new ImmersiveLayout.OnDetachedListener() {
             @Override
             public void onDetachedFromWindow(View view) {
                 if (mView.getParent() != null) {
@@ -180,7 +180,7 @@ final public class ImmersiveHint {
                 }
             }
         };
-        this.mClickListener = new View.OnClickListener() {
+        mClickListener = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (mAction != null && (mFlags & FLAG_ACTION_EXECUTED) == 0) {
