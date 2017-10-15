@@ -8,6 +8,6 @@ import android.support.annotation.IntDef;
  * @author Lx
  *         Create on 15/10/2017.
  */
-@IntDef({ImmersiveConfig.Priority.HIGH, ImmersiveConfig.Priority.NORMAL, ImmersiveConfig.Priority.LOW})
+@IntDef({ImmersiveConfig.Priority.PROFESSIONAL, ImmersiveConfig.Priority.HARD, ImmersiveConfig.Priority.NORMAL, ImmersiveConfig.Priority.EASY, ImmersiveConfig.Priority.CHICKEN})
 @interface Priority {
 }

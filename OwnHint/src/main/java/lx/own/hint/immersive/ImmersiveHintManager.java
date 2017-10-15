@@ -36,9 +36,10 @@ final public class ImmersiveHintManager {
     private ActivityManager mActivityManager;
     private final Handler mHandler;
     private volatile OperateRecorder mCurrentRecorder;
-    private final LinkedBlockingQueue<OperateRecorder> mHighPriorRecorders, mNormalPriorRecorders, mLowPriorRecorders;
+    private final LinkedBlockingQueue<OperateRecorder> mRankSSPriorRecorders, mRankSPriorRecorders,
+            mRankAPriorRecorders, mRankBPriorRecorders, mRankCPriorRecorders;
 
-    private ImmersiveHintManager() {
+    {
         mHandler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message msg) {
@@ -46,9 +47,14 @@ final public class ImmersiveHintManager {
                     processOperateTimeout((OperateRecorder) msg.obj);
             }
         };
-        mHighPriorRecorders = new LinkedBlockingQueue<>();
-        mNormalPriorRecorders = new LinkedBlockingQueue<>();
-        mLowPriorRecorders = new LinkedBlockingQueue<>();
+        mRankSSPriorRecorders = new LinkedBlockingQueue<>();
+        mRankSPriorRecorders = new LinkedBlockingQueue<>();
+        mRankAPriorRecorders = new LinkedBlockingQueue<>();
+        mRankBPriorRecorders = new LinkedBlockingQueue<>();
+        mRankCPriorRecorders = new LinkedBlockingQueue<>();
+    }
+
+    private ImmersiveHintManager() {
     }
 
     public ImmersiveHintManager init(@NonNull Context context) {
@@ -103,9 +109,9 @@ final public class ImmersiveHintManager {
             cancelOperate(mCurrentRecorder, reason);
             returnValue = true;
         } else {
-            returnValue = removeInQueue(operate, mHighPriorRecorders)
-                    || removeInQueue(operate, mNormalPriorRecorders)
-                    || removeInQueue(operate, mLowPriorRecorders);
+            returnValue = removeInQueue(operate, mRankSPriorRecorders)
+                    || removeInQueue(operate, mRankAPriorRecorders)
+                    || removeInQueue(operate, mRankBPriorRecorders);
         }
         return returnValue;
     }
@@ -128,7 +134,7 @@ final public class ImmersiveHintManager {
     private boolean orderOperate(@NonNull OperateRecorder recorder) {
         boolean returnValue = false;
         mCurrentRecorder = recorder;
-        OperateInterface operate = recorder.operate;
+        final OperateInterface operate = recorder.operate;
         if (operate != null) {
             operate.show();
             returnValue = true;
@@ -142,7 +148,7 @@ final public class ImmersiveHintManager {
 
     private boolean cancelOperate(@NonNull OperateRecorder recorder, int reason) {
         boolean returnValue = false;
-        OperateInterface operate = recorder.operate;
+        final OperateInterface operate = recorder.operate;
         if (operate != null) {
             mHandler.removeCallbacksAndMessages(recorder);
             operate.dismiss(reason);
@@ -169,21 +175,29 @@ final public class ImmersiveHintManager {
     }
 
     private void offerRecorder(@NonNull OperateRecorder recorder) {
-        if (recorder.priority == ImmersiveConfig.Priority.HIGH) {
-            mHighPriorRecorders.offer(recorder);
+        if (recorder.priority == ImmersiveConfig.Priority.PROFESSIONAL) {
+            mRankSSPriorRecorders.offer(recorder);
+        } else if (recorder.priority == ImmersiveConfig.Priority.HARD) {
+            mRankSPriorRecorders.offer(recorder);
         } else if (recorder.priority == ImmersiveConfig.Priority.NORMAL) {
-            mNormalPriorRecorders.offer(recorder);
+            mRankAPriorRecorders.offer(recorder);
+        } else if (recorder.priority == ImmersiveConfig.Priority.EASY) {
+            mRankBPriorRecorders.offer(recorder);
         } else {
-            mLowPriorRecorders.offer(recorder);
+            mRankCPriorRecorders.offer(recorder);
         }
     }
 
     private OperateRecorder pollRecorder() {
-        OperateRecorder returnValue = mHighPriorRecorders.poll();
+        OperateRecorder returnValue = mRankSSPriorRecorders.poll();
         if (returnValue == null)
-            returnValue = mNormalPriorRecorders.poll();
+            returnValue = mRankSPriorRecorders.poll();
         if (returnValue == null)
-            returnValue = mLowPriorRecorders.poll();
+            returnValue = mRankAPriorRecorders.poll();
+        if (returnValue == null)
+            returnValue = mRankBPriorRecorders.poll();
+        if (returnValue == null)
+            returnValue = mRankCPriorRecorders.poll();
         return returnValue;
     }
 
@@ -201,7 +215,7 @@ final public class ImmersiveHintManager {
     }
 
     private class OperateRecorder {
-        private final OperateInterface operate;
+        private OperateInterface operate;
         private int priority;
         private long duration;
 

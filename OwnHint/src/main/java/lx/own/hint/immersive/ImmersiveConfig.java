@@ -32,8 +32,10 @@ public interface ImmersiveConfig {
     }
 
     interface Priority {
-        int HIGH = 300;
+        int PROFESSIONAL = 400;
+        int HARD = 300;
         int NORMAL = 200;
-        int LOW = 100;
+        int EASY = 100;
+        int CHICKEN = 0;
     }
 }

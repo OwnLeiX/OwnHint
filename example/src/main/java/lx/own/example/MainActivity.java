@@ -25,7 +25,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (v.getId()) {
             case R.id.pLow:
                 ImmersiveHint.make(ImmersiveConfig.Type.Hint, this, "this is Low", "action", null)
-                        .priority(ImmersiveConfig.Priority.LOW)
+                        .priority(ImmersiveConfig.Priority.EASY)
                         .withIcon(true)
                         .redefineIconSize(100)
                         .redefineIconDrawable(R.mipmap.ic_launcher_round)
@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 ImmersiveHint.make(ImmersiveConfig.Type.Hint, this, "this is Normal").priority(ImmersiveConfig.Priority.NORMAL).show();
                 break;
             case R.id.pHigh:
-                ImmersiveHint.make(ImmersiveConfig.Type.Warning, this, "this is High").priority(ImmersiveConfig.Priority.HIGH).show();
+                ImmersiveHint.make(ImmersiveConfig.Type.Warning, this, "this is High").priority(ImmersiveConfig.Priority.HARD).show();
                 break;
             case R.id.open:
                 startActivity(new Intent(this, SubActivity.class));
