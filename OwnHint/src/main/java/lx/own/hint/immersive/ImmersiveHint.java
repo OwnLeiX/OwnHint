@@ -35,6 +35,7 @@ final public class ImmersiveHint {
     private static final int FLAG_IN_ANIMATING = 1 << 2;
     private static final int FLAG_OUT_ANIMATING = 1 << 3;
     private static final int FLAG_REPLACE_WAITING = 1 << 4;
+    private static final int FLAG_IS_FINISHED = 1 << 5;
 
     private static volatile int mStatusHeight = -1;
     private static volatile WeakReference<ViewGroup> mFanciedParent;
@@ -381,7 +382,8 @@ final public class ImmersiveHint {
                 mFlags &= ~FLAG_IN_ANIMATING;
                 if ((mFlags & FLAG_REPLACE_WAITING) == FLAG_REPLACE_WAITING) {
                     mFlags &= ~FLAG_REPLACE_WAITING;
-                    animateOut();
+                    if ((mFlags & FLAG_IS_FINISHED) == 0)
+                        animateOut();
                 } else {
                     dispatchShown();
                 }
@@ -452,5 +454,6 @@ final public class ImmersiveHint {
         if (layOutAnim != null)
             layOutAnim.cancel();
         mFlags &= ~(FLAG_IN_ANIMATING | FLAG_OUT_ANIMATING);
+        mFlags |= FLAG_IS_FINISHED;
     }
 }
