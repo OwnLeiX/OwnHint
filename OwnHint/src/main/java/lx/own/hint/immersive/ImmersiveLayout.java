@@ -60,7 +60,7 @@ final public class ImmersiveLayout extends LinearLayout {
         final int paddingEndsHorizontal = config.paddingEndsHorizontal;
         final int paddingEndsVertical = config.paddingEndsVertical;
         final boolean transmissionTouchEvent = config.transmissionTouchEvent;
-        final boolean hasAction = TextUtils.isEmpty(actionText);
+        final boolean hasAction = !TextUtils.isEmpty(actionText);
         setPadding(paddingEndsHorizontal, paddingEndsVertical, paddingEndsHorizontal, paddingEndsVertical);
         setClickable(!transmissionTouchEvent);
         mIconView = buildIconView(context, config);
