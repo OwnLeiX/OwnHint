@@ -1,8 +1,6 @@
 package lx.own.hint.immersive;
 
-import android.app.Activity;
 import android.app.ActivityManager;
-import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -10,7 +8,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -33,7 +30,6 @@ final public class ImmersiveHintManager {
         return mInstance;
     }
 
-    private ActivityManager mActivityManager;
     private final Handler mHandler;
     private volatile OperateRecorder mCurrentRecorder;
     private final LinkedBlockingQueue<OperateRecorder> mRankSSPriorRecorders, mRankSPriorRecorders,
@@ -57,30 +53,9 @@ final public class ImmersiveHintManager {
     private ImmersiveHintManager() {
     }
 
-    public ImmersiveHintManager init(@NonNull Context context) {
-        mActivityManager = (ActivityManager) context
-                .getSystemService(Context.ACTIVITY_SERVICE);
-        return this;
-    }
-
     public ImmersiveHintManager configure(@NonNull ImmersiveConfig.Type type, @NonNull HintTypeConfig config) {
         type.custom(config);
         return this;
-    }
-
-    @SuppressWarnings("deprecation")
-    boolean isActivityRunning(@Nullable Activity activity) {
-        if (activity == null)
-            return false;
-        if (mActivityManager == null)
-            throw new IllegalStateException("you didn't call ImmersiveHintManager.init(Context) before !");
-        List<ActivityManager.RunningTaskInfo> runningTasks = mActivityManager.getRunningTasks(1);
-        if (runningTasks == null || runningTasks.size() < 1)
-            return false;
-        ActivityManager.RunningTaskInfo runningTask = runningTasks.get(0);
-        return runningTask != null
-                && runningTask.topActivity != null
-                && runningTask.topActivity.getClassName().equals(activity.getClass().getName());
     }
 
     void enqueue(@NonNull OperateInterface operate, long duration, int priority) {

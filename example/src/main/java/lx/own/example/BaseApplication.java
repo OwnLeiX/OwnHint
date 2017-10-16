@@ -68,7 +68,6 @@ public class BaseApplication extends Application {
                             }
                         });
         ImmersiveHintManager.$()
-                .init(this)
                 .configure(ImmersiveConfig.Type.Hint, customConfig)
                 .configure(ImmersiveConfig.Type.Warning, customConfig);
     }
