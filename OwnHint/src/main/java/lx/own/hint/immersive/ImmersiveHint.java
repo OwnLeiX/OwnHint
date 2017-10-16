@@ -119,7 +119,7 @@ final public class ImmersiveHint {
     }
 
     private static boolean isActivityRunning(@Nullable Activity activity) {
-        return activity != null && activity.hasWindowFocus();
+        return activity != null && (activity.hasWindowFocus() || !activity.isFinishing());
     }
 
     private int mFlags;
