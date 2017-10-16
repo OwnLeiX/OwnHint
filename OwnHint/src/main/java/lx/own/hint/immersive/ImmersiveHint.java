@@ -314,7 +314,7 @@ final public class ImmersiveHint {
 
     private void beginTransition() {
         ViewGroup parent = mParent.get();
-        if (parent == null || parent.getVisibility() != View.VISIBLE || !ImmersiveHintManager.$().isActivityRunning(this.mActivity.get())) {
+        if (parent == null || !ImmersiveHintManager.$().isActivityRunning(this.mActivity.get())) {
             inspectOverallModel();
         } else {
             if (mView.getParent() == null)
@@ -357,22 +357,8 @@ final public class ImmersiveHint {
                     parent.addOnAttachStateChangeListener(mParentDetachListener);
                     mActivity = new WeakReference<>(act);
                     mParent = new WeakReference<>(parent);
-                    if (mView.getParent() == null)
-                        parent.addView(mView);
-                    if (parent.getVisibility() != View.VISIBLE && ImmersiveHintManager.$().isActivityRunning(this.mActivity.get())) {
-                        if (ViewCompat.isLaidOut(mView)) {
-                            animateIn();
-                        } else {
-                            mView.setOnLayoutChangedListener(new ImmersiveLayout.OnLayoutChangedListener() {
-                                @Override
-                                public void onLayoutChanged(View view, int left, int top, int right, int bottom) {
-                                    animateIn();
-                                    mView.setOnLayoutChangedListener(null);
-                                }
-                            });
-                        }
-                        return;
-                    }
+                    beginTransition();
+                    return;
                 }
             }
         }
