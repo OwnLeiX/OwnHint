@@ -1,6 +1,5 @@
 package lx.own.hint.immersive;
 
-import android.app.ActivityManager;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -67,7 +66,7 @@ final public class ImmersiveHintManager {
         } else {
             final OperateRecorder next = new OperateRecorder(operate, duration, priority);
             if (mCurrentRecorder != null) {
-                if (mCurrentRecorder.priority >= priority || cancelOperate(mCurrentRecorder, ImmersiveConfig.DismissReason.REASON_REPLACE)) {
+                if (mCurrentRecorder.priority > priority || cancelOperate(mCurrentRecorder, ImmersiveConfig.DismissReason.REASON_REPLACE)) {
                     offerRecorder(next);
                 } else {
                     orderOperate(next);
@@ -78,7 +77,7 @@ final public class ImmersiveHintManager {
         }
     }
 
-    boolean cancel(@NonNull OperateInterface operate, int reason) {
+    boolean dequeue(@NonNull OperateInterface operate, int reason) {
         boolean returnValue;
         if (isCurrent(operate)) {
             cancelOperate(mCurrentRecorder, reason);
@@ -126,7 +125,7 @@ final public class ImmersiveHintManager {
         final OperateInterface operate = recorder.operate;
         if (operate != null) {
             mHandler.removeCallbacksAndMessages(recorder);
-            operate.dismiss(reason);
+            operate.hide(reason);
             returnValue = true;
         }
         return returnValue;
@@ -208,6 +207,6 @@ final public class ImmersiveHintManager {
     interface OperateInterface {
         void show();
 
-        void dismiss(int reason);
+        void hide(int reason);
     }
 }

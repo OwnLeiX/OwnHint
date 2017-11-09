@@ -58,15 +58,13 @@ public class BaseApplication extends Application {
 
             }
         });
-
-        HintTypeConfig customConfig = new HintTypeConfig()
-                .overallModel(
-                        new HintTypeConfig.OverallModelSupporter() {
-                            @Override
-                            public Activity provideTopActivity() {
-                                return mCurr;
-                            }
-                        });
+        HintTypeConfig.OverallModelSupporter SUPPORTER = new HintTypeConfig.OverallModelSupporter() {
+            @Override
+            public Activity provideTopActivity() {
+                return mCurr;
+            }
+        };
+        HintTypeConfig customConfig = new HintTypeConfig().overallModel(SUPPORTER);
         ImmersiveHintManager.$()
                 .configure(ImmersiveConfig.Type.Hint, customConfig)
                 .configure(ImmersiveConfig.Type.Warning, customConfig);

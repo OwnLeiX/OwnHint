@@ -1,4 +1,4 @@
-package lx.own.hint.immersive;
+package lx.own.hint;
 
 import android.support.annotation.IntDef;
 import android.view.Gravity;
@@ -11,5 +11,5 @@ import android.view.Gravity;
  */
 @SuppressWarnings("all")
 @IntDef({Gravity.CENTER, Gravity.LEFT, Gravity.RIGHT})
-@interface GravityConfig {
+public @interface GravityConfig {
 }

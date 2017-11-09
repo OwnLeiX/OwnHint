@@ -1,4 +1,4 @@
-package lx.own.hint.immersive;
+package lx.own.hint;
 
 /**
  * <b> </b><br/>

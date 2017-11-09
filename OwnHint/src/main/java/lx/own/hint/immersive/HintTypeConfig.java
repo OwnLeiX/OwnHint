@@ -5,6 +5,8 @@ import android.support.annotation.ColorInt;
 import android.support.annotation.DrawableRes;
 import android.view.Gravity;
 
+import lx.own.hint.GravityConfig;
+
 /**
  * <b> </b><br/>
  *
@@ -134,8 +136,9 @@ public class HintTypeConfig {
         return this;
     }
 
-    final public void setActionDismiss(boolean actionDismiss) {
+    final public HintTypeConfig setActionDismiss(boolean actionDismiss) {
         this.actionDismiss = actionDismiss;
+        return this;
     }
 
     final public HintTypeConfig overallModel(OverallModelSupporter supporter) {

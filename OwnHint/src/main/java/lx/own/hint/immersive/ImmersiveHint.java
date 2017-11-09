@@ -19,7 +19,9 @@ import android.widget.FrameLayout;
 
 import java.lang.ref.WeakReference;
 
+import lx.own.hint.HintAction;
 import lx.own.hint.R;
+
 
 /**
  * <p>沉浸式提示</p><br/>
@@ -145,7 +147,7 @@ final public class ImmersiveHint {
             }
 
             @Override
-            public void dismiss(int reason) {
+            public void hide(int reason) {
                 endTransition(reason);
             }
         };
@@ -208,7 +210,7 @@ final public class ImmersiveHint {
         show(mType.config.showDuration);
     }
 
-    private void show(final long duration) {
+    public void show(final long duration) {
         ImmersiveHintManager.$().enqueue(mOperate, duration, mPriority);
     }
 
@@ -217,7 +219,7 @@ final public class ImmersiveHint {
     }
 
     private void dismiss(final int reason) {
-        ImmersiveHintManager.$().cancel(mOperate, reason);
+        ImmersiveHintManager.$().dequeue(mOperate, reason);
     }
 
     public ImmersiveHint withIcon(boolean show) {
@@ -225,7 +227,7 @@ final public class ImmersiveHint {
         return this;
     }
 
-    public ImmersiveHint priority(@Priority int priority) {
+    public ImmersiveHint priority(@ImmersivePriority int priority) {
         this.mPriority = priority;
         return this;
     }

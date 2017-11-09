@@ -11,7 +11,7 @@ import android.support.annotation.NonNull;
 
 public interface ImmersiveConfig {
     enum Type {
-        Warning(HintTypeConfig.defaultConfig), Hint(HintTypeConfig.defaultConfig);
+        Warning(HintTypeConfig.defaultConfig), Hint(HintTypeConfig.defaultConfig),Succeed(HintTypeConfig.defaultConfig),Failed(HintTypeConfig.defaultConfig);
         HintTypeConfig config;
 
         Type(HintTypeConfig config) {
