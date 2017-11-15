@@ -29,6 +29,9 @@ final public class ImmersiveHintManager {
         return mInstance;
     }
 
+    private final int MSG_SHOW = -1;
+    private final int MSG_DISMISS = -2;
+    private final int MSG_TIME_OUT = -3;
     private final Handler mHandler;
     private volatile OperateRecorder mCurrentRecorder;
     private final LinkedBlockingQueue<OperateRecorder> mRankSSPriorRecorders, mRankSPriorRecorders,
@@ -38,8 +41,13 @@ final public class ImmersiveHintManager {
         mHandler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message msg) {
-                if (msg.what == ImmersiveConfig.DismissReason.REASON_TIMEOUT)
+                if (msg.what == MSG_SHOW) {
+                    ((OperateRecorder) msg.obj).operate.show();
+                } else if (msg.what == MSG_DISMISS) {
+                    ((OperateRecorder) msg.obj).operate.hide(msg.arg1);
+                } else if (msg.what == MSG_TIME_OUT) {
                     processOperateTimeout((OperateRecorder) msg.obj);
+                }
             }
         };
         mRankSSPriorRecorders = new LinkedBlockingQueue<>();
@@ -110,7 +118,7 @@ final public class ImmersiveHintManager {
         mCurrentRecorder = recorder;
         final OperateInterface operate = recorder.operate;
         if (operate != null) {
-            operate.show();
+            mHandler.sendMessage(Message.obtain(mHandler, MSG_SHOW, recorder));
             returnValue = true;
         } else {
             final OperateRecorder next = pollRecorder();
@@ -125,7 +133,7 @@ final public class ImmersiveHintManager {
         final OperateInterface operate = recorder.operate;
         if (operate != null) {
             mHandler.removeCallbacksAndMessages(recorder);
-            operate.hide(reason);
+            mHandler.sendMessage(Message.obtain(mHandler, MSG_DISMISS, reason, 0, recorder));
             returnValue = true;
         }
         return returnValue;
@@ -136,7 +144,7 @@ final public class ImmersiveHintManager {
         if (delay <= 0)
             delay = 100;
         mHandler.removeCallbacksAndMessages(recorder);
-        mHandler.sendMessageDelayed(Message.obtain(mHandler, ImmersiveConfig.DismissReason.REASON_TIMEOUT, recorder), delay);
+        mHandler.sendMessageDelayed(Message.obtain(mHandler, MSG_TIME_OUT, recorder), delay);
     }
 
     private void processOperateTimeout(@NonNull OperateRecorder recorder) {
