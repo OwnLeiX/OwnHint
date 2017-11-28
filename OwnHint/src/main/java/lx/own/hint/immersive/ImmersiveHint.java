@@ -5,7 +5,6 @@ import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
-import android.os.Build;
 import android.support.annotation.ColorInt;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
@@ -62,16 +61,16 @@ final public class ImmersiveHint {
 
     private static void viewHeightCompat(View view) {
         int statusBarHeight = getStatusBarHeight(view.getContext());
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            view.setPadding(view.getPaddingLeft()
-                    , view.getPaddingTop() + statusBarHeight, view.getPaddingRight(), view.getPaddingBottom());
-            view.setMinimumHeight(statusBarHeight);
-        } else {
-            ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
-            if (layoutParams != null && layoutParams instanceof ViewGroup.MarginLayoutParams) {
-                ((ViewGroup.MarginLayoutParams) layoutParams).topMargin += statusBarHeight;
-            }
-        }
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+        view.setPadding(view.getPaddingLeft()
+                , view.getPaddingTop() + statusBarHeight, view.getPaddingRight(), view.getPaddingBottom());
+        view.setMinimumHeight(statusBarHeight);
+//        } else {
+//            ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
+//            if (layoutParams != null && layoutParams instanceof ViewGroup.MarginLayoutParams) {
+//                ((ViewGroup.MarginLayoutParams) layoutParams).topMargin += statusBarHeight;
+//            }
+//        }
     }
 
     private static int getStatusBarHeight(Context context) {
@@ -135,6 +134,7 @@ final public class ImmersiveHint {
     private final ImmersiveHintManager.OperateInterface mOperate;
     private final View.OnAttachStateChangeListener mParentDetachListener;
     private final ImmersiveLayout.OnDetachedListener mViewDetachListener;
+    private final ImmersiveLayout.OnUpglideListener mViewUpglideListener;
     private final View.OnClickListener mClickListener;
 
     {
@@ -197,6 +197,12 @@ final public class ImmersiveHint {
                 }
                 if ((mFlags & FLAG_AUTO_DISMISS) == FLAG_AUTO_DISMISS)
                     dismiss(ImmersiveConfig.DismissReason.REASON_ACTION);
+            }
+        };
+        mViewUpglideListener = new ImmersiveLayout.OnUpglideListener() {
+            @Override
+            public void onUpglide() {
+                dismiss(ImmersiveConfig.DismissReason.REASON_ACTIVE);
             }
         };
     }
@@ -317,6 +323,7 @@ final public class ImmersiveHint {
         mView = (ImmersiveLayout) activity.getLayoutInflater().inflate(R.layout.immersive_layout, parent, false);
         mView.adaptContent(type, message, actionText, mClickListener);
         mView.setDetachedListener(mViewDetachListener);
+        mView.setOnUpglideListener(mViewUpglideListener);
         viewHeightCompat(mView);
     }
 
@@ -432,7 +439,7 @@ final public class ImmersiveHint {
     private void animateOut() {
         if ((mFlags & FLAG_OUT_ANIMATING) == FLAG_OUT_ANIMATING)
             return;
-        ObjectAnimator mLayOutAnim = ObjectAnimator.ofFloat(mView, "translationY", 0f, -mView.getHeight());
+        mLayOutAnim = ObjectAnimator.ofFloat(mView, "translationY", 0f, -mView.getHeight());
         mLayOutAnim.setDuration(mType.config.animDuration);
         mLayOutAnim.addListener(new Animator.AnimatorListener() {
             @Override

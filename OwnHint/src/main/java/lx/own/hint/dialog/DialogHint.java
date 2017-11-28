@@ -2,6 +2,8 @@ package lx.own.hint.dialog;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.DialogInterface;
+import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
@@ -99,37 +101,56 @@ public class DialogHint {
         return mUniversalWidth;
     }
 
-    private int mFlags;
     private final DialogHintManager.OperateInterface mOperate;
+    private final WeakReference<Activity> mActivity;
+    private final View.OnClickListener mOnClickListener;
+    private int mFlags;
     private int mPriority;
-    private WeakReference<Activity> mActivity;
     private HintAction mSureAction, mCancelAction;
     private Dialog mUniversalDialog;
     private BizarreTypeDialog mBizarreTypeDialog;
-    private final View.OnClickListener mOnClickListener;
 
     {
         mPriority = DialogConfig.Priority.NORMAL;
         mOperate = new DialogHintManager.OperateInterface() {
             @Override
             public void show() {
-                if (mUniversalDialog != null && !mUniversalDialog.isShowing())
-                    mUniversalDialog.show();
-                if (mBizarreTypeDialog != null && !mBizarreTypeDialog.isShowing())
-                    mBizarreTypeDialog.show();
+                Activity activity = mActivity.get();
+                if (activity != null && !activity.isFinishing()) {
+                    if (mUniversalDialog != null && !mUniversalDialog.isShowing())
+                        mUniversalDialog.show();
+                    if (mBizarreTypeDialog != null && !mBizarreTypeDialog.isShowing())
+                        mBizarreTypeDialog.show();
+                } else {
+                    dismiss(DialogConfig.DismissReason.REASON_DETACHED);
+                }
             }
 
             @Override
             public void hide(int reason) {
-                if (mUniversalDialog != null && mUniversalDialog.isShowing())
-                    mUniversalDialog.dismiss();
+                if (mUniversalDialog != null && mUniversalDialog.isShowing()) {
+                    Activity activity = mActivity.get();
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                        if (activity != null && !activity.isDestroyed())
+                            mUniversalDialog.dismiss();
+                    } else {
+                        if (activity != null && !activity.isFinishing())
+                            mUniversalDialog.dismiss();
+                    }
+                }
                 if (mBizarreTypeDialog != null && mBizarreTypeDialog.isShowing())
                     mBizarreTypeDialog.dismiss();
             }
 
             @Override
             public boolean isShowing() {
-                return (mUniversalDialog != null && mUniversalDialog.isShowing()) || (mBizarreTypeDialog != null && mBizarreTypeDialog.isShowing());
+                final Activity activity = mActivity.get();
+                final boolean dialogShowing = (mUniversalDialog != null && mUniversalDialog.isShowing()) || (mBizarreTypeDialog != null && mBizarreTypeDialog.isShowing());
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                    return dialogShowing && activity != null && !activity.isDestroyed();
+                } else {
+                    return dialogShowing && activity != null && !activity.isFinishing();
+                }
             }
         };
         mOnClickListener = new View.OnClickListener() {
@@ -164,7 +185,6 @@ public class DialogHint {
             } catch (ClassCastException ignore) {
 
             }
-
         }
         return this;
     }
@@ -181,6 +201,12 @@ public class DialogHint {
         return this;
     }
 
+    public DialogHint extraSetOutsideCancelListener(DialogInterface.OnCancelListener listener) {
+        if (mUniversalDialog != null)
+            mUniversalDialog.setOnCancelListener(listener);
+        return this;
+    }
+
     public boolean show() {
         boolean returnValue = false;
         if (isActivityRunning(mActivity.get()))
@@ -190,6 +216,10 @@ public class DialogHint {
 
     public void dismiss() {
         dismiss(DialogConfig.DismissReason.REASON_ACTIVE);
+    }
+
+    public Dialog getUniversalDialog() {
+        return mUniversalDialog;
     }
 
     private void dismiss(int reason) {
@@ -209,12 +239,12 @@ public class DialogHint {
     }
 
     private DialogHint(DialogConfig.Type type, Activity activity, String message, String sureText, HintAction sureAction, String cancelText, HintAction cancelAction) {
+        this.mActivity = new WeakReference<Activity>(activity);
         recordParams(activity, type, sureAction, cancelAction);
         buildViews(activity, message, sureText, cancelText, type);
     }
 
     private void recordParams(Activity activity, DialogConfig.Type type, HintAction sureAction, HintAction cancelAction) {
-        mActivity = new WeakReference<Activity>(activity);
         mSureAction = sureAction;
         mCancelAction = cancelAction;
         if (type.config.actionDismiss) {

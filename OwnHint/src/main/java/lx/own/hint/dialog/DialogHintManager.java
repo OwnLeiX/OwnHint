@@ -3,8 +3,6 @@ package lx.own.hint.dialog;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import java.lang.ref.WeakReference;
-
 /**
  * <b> </b><br/>
  *
@@ -39,10 +37,14 @@ public class DialogHintManager {
         boolean returnValue = false;
         OperateRecorder currentRecorder = this.mCurrentRecorder;
         if (currentRecorder != null) {
-            OperateInterface currentOperate = currentRecorder.operate.get();
-            if (returnValue = ((currentOperate == null || !currentOperate.isShowing() || (currentRecorder.priority <= priority && currentRecorder.priority != DialogConfig.Priority.PROFESSIONAL)))) {
-                cancelOperate(currentRecorder, DialogConfig.DismissReason.REASON_REPLACE);
+            OperateInterface currentOperate = currentRecorder.get();
+            if (returnValue = (/*currentOperate == null || */!currentOperate.isShowing())) {
                 orderOperate(new OperateRecorder(operate, priority));
+            } else {
+                if (returnValue = (currentRecorder.priority <= priority && currentRecorder.priority != DialogConfig.Priority.PROFESSIONAL)) {
+                    cancelOperate(currentRecorder, DialogConfig.DismissReason.REASON_REPLACE);
+                    orderOperate(new OperateRecorder(operate, priority));
+                }
             }
         } else {
             returnValue = true;
@@ -62,8 +64,8 @@ public class DialogHintManager {
     }
 
     private void orderOperate(@NonNull OperateRecorder recorder) {
-        OperateInterface operate = recorder.operate.get();
-        if (operate != null) {
+        OperateInterface operate = recorder.get();
+        if (operate != null&& !operate.isShowing()) {
             this.mCurrentRecorder = recorder;
             operate.show();
         }
@@ -71,8 +73,8 @@ public class DialogHintManager {
 
     private boolean cancelOperate(@NonNull DialogHintManager.OperateRecorder recorder, int reason) {
         boolean returnValue = false;
-        final DialogHintManager.OperateInterface operate = recorder.operate.get();
-        if (operate != null) {
+        final DialogHintManager.OperateInterface operate = recorder.get();
+        if (operate != null && operate.isShowing()) {
             operate.hide(reason);
             returnValue = true;
         }
@@ -85,22 +87,26 @@ public class DialogHintManager {
         return mCurrentRecorder != null && mCurrentRecorder.is(operate);
     }
 
-    void hideBelowPriority(@DialogPriority int priority) {
+    synchronized void hideBelowPriority(@DialogPriority int priority) {
         if (mCurrentRecorder != null && mCurrentRecorder.priority <= priority)
             cancelOperate(mCurrentRecorder, DialogConfig.DismissReason.REASON_ACTIVE);
     }
 
     private class OperateRecorder {
-        private final WeakReference<OperateInterface> operate;
+        private final DialogHintManager.OperateInterface operate;
         private final int priority;
 
         private OperateRecorder(@NonNull DialogHintManager.OperateInterface operate, int priority) {
-            this.operate = new WeakReference<OperateInterface>(operate);
+            this.operate = operate;
             this.priority = priority;
         }
 
         private boolean is(@Nullable DialogHintManager.OperateInterface operate) {
-            return this.operate.get() == operate;
+            return this.operate == operate;
+        }
+
+        private OperateInterface get() {
+            return operate;
         }
     }
 

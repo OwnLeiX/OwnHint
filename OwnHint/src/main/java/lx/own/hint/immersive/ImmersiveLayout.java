@@ -8,6 +8,7 @@ import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -25,8 +26,13 @@ final public class ImmersiveLayout extends LinearLayout {
 
     private OnLayoutChangedListener mLayoutChangedListener;
     private OnDetachedListener mDetachedListener;
+    private OnUpglideListener mOnUpglideListener;
     ImageView mIconView;
     TextView mMessageView, mActionView;
+    private float downX;
+    private float downY;
+
+    private boolean isTouching;
 
     public ImmersiveLayout(Context context) {
         this(context, null);
@@ -52,6 +58,33 @@ final public class ImmersiveLayout extends LinearLayout {
         super.onDetachedFromWindow();
         if (mDetachedListener != null)
             mDetachedListener.onDetachedFromWindow(this);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        int action = event.getAction();
+        if (action == MotionEvent.ACTION_DOWN) {
+            downX = event.getX();
+            downY = event.getY();
+            isTouching = true;
+            return true;
+        } else if (action == MotionEvent.ACTION_MOVE && isTouching) {
+            float currX = event.getX();
+            float currY = event.getY();
+            if (Math.abs(downX - currX) > 20) {
+                isTouching = false;
+            } else if (downY - currY > 30) {
+                OnUpglideListener upglideListener = this.mOnUpglideListener;
+                if (upglideListener != null)
+                    upglideListener.onUpglide();
+                isTouching = false;
+            } else {
+                return true;
+            }
+        } else {
+            isTouching = false;
+        }
+        return super.onTouchEvent(event);
     }
 
     void adaptContent(@NonNull ImmersiveConfig.Type type, @Nullable String message, @Nullable String actionText, @Nullable OnClickListener actionListener) {
@@ -89,6 +122,10 @@ final public class ImmersiveLayout extends LinearLayout {
 
     void setDetachedListener(OnDetachedListener listener) {
         this.mDetachedListener = listener;
+    }
+
+    public void setOnUpglideListener(OnUpglideListener mOnUpglideListener) {
+        this.mOnUpglideListener = mOnUpglideListener;
     }
 
     private ImageView buildIconView(Context context, HintTypeConfig config) {
@@ -153,5 +190,9 @@ final public class ImmersiveLayout extends LinearLayout {
 
     interface OnDetachedListener {
         void onDetachedFromWindow(View view);
+    }
+
+    interface OnUpglideListener {
+        void onUpglide();
     }
 }
