@@ -128,18 +128,22 @@ public class DialogHint {
 
             @Override
             public void hide(int reason) {
-                if (mUniversalDialog != null && mUniversalDialog.isShowing()) {
-                    Activity activity = mActivity.get();
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                        if (activity != null && !activity.isDestroyed())
+                Activity activity = mActivity.get();
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                    if (activity != null && !activity.isDestroyed()) {
+                        if (mUniversalDialog != null && mUniversalDialog.isShowing())
                             mUniversalDialog.dismiss();
-                    } else {
-                        if (activity != null && !activity.isFinishing())
+                        if (mBizarreTypeDialog != null && mBizarreTypeDialog.isShowing())
+                            mBizarreTypeDialog.dismiss();
+                    }
+                } else {
+                    if (activity != null && !activity.isFinishing()) {
+                        if (mUniversalDialog != null && mUniversalDialog.isShowing())
                             mUniversalDialog.dismiss();
+                        if (mBizarreTypeDialog != null && mBizarreTypeDialog.isShowing())
+                            mBizarreTypeDialog.dismiss();
                     }
                 }
-                if (mBizarreTypeDialog != null && mBizarreTypeDialog.isShowing())
-                    mBizarreTypeDialog.dismiss();
             }
 
             @Override
@@ -147,7 +151,7 @@ public class DialogHint {
                 final Activity activity = mActivity.get();
                 final boolean dialogShowing = (mUniversalDialog != null && mUniversalDialog.isShowing()) || (mBizarreTypeDialog != null && mBizarreTypeDialog.isShowing());
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                    return dialogShowing && activity != null && !activity.isDestroyed();
+                    return dialogShowing && activity != null && !activity.isFinishing() && !activity.isDestroyed();
                 } else {
                     return dialogShowing && activity != null && !activity.isFinishing();
                 }
