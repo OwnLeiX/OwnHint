@@ -31,6 +31,7 @@ public class DialogHint {
 
     private static final int FLAG_AUTO_DISMISS = 1;
     private static final int FLAG_IS_DISMISSED = 1 << 1;
+    private static final int FLAG_DEPRECATED = 1 << 2;
     private static int mScreenWidth = -1;
     private static int mHorizontalPadding = -1;
     private static int mUniversalWidth = -1;
@@ -104,6 +105,8 @@ public class DialogHint {
     private final DialogHintManager.OperateInterface mOperate;
     private final WeakReference<Activity> mActivity;
     private final View.OnClickListener mOnClickListener;
+    private final View.OnAttachStateChangeListener mAttachStateChangelistener;
+    private DialogInterface.OnCancelListener mExtraCancelListener;
     private int mFlags;
     private int mPriority;
     private HintAction mSureAction, mCancelAction;
@@ -148,13 +151,7 @@ public class DialogHint {
 
             @Override
             public boolean isShowing() {
-                final Activity activity = mActivity.get();
-                final boolean dialogShowing = (mUniversalDialog != null && mUniversalDialog.isShowing()) || (mBizarreTypeDialog != null && mBizarreTypeDialog.isShowing());
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                    return dialogShowing && activity != null && !activity.isFinishing() && !activity.isDestroyed();
-                } else {
-                    return dialogShowing && activity != null && !activity.isFinishing();
-                }
+                return DialogHint.this.isShowing();
             }
         };
         mOnClickListener = new View.OnClickListener() {
@@ -163,13 +160,27 @@ public class DialogHint {
                 if ((mFlags & FLAG_IS_DISMISSED) > 0) return;
                 final int id = v.getId();
                 if (id == R.id.universalDialog_btv_leftButton) {
+                    inspectAutoDismiss(DialogConfig.DismissReason.REASON_ACTION);
                     if (mCancelAction != null)
                         mCancelAction.onAction();
-                    inspectAutoDismiss(DialogConfig.DismissReason.REASON_ACTION);
                 } else if (id == R.id.universalDialog_btv_rightButton) {
+                    inspectAutoDismiss(DialogConfig.DismissReason.REASON_ACTION);
                     if (mSureAction != null)
                         mSureAction.onAction();
-                    inspectAutoDismiss(DialogConfig.DismissReason.REASON_ACTION);
+                }
+            }
+        };
+        mAttachStateChangelistener = new View.OnAttachStateChangeListener() {
+            @Override
+            public void onViewAttachedToWindow(View v) {
+
+            }
+
+            @Override
+            public void onViewDetachedFromWindow(View v) {
+                v.removeOnAttachStateChangeListener(this);
+                if ((mFlags & FLAG_IS_DISMISSED) == 0) {
+                    dismiss(DialogConfig.DismissReason.REASON_DETACHED);
                 }
             }
         };
@@ -213,7 +224,7 @@ public class DialogHint {
 
     public boolean show() {
         boolean returnValue = false;
-        if (isActivityRunning(mActivity.get()))
+        if ((mFlags & FLAG_DEPRECATED) == 0 && isActivityRunning(mActivity.get()))
             returnValue = DialogHintManager.$().enqueue(mOperate, mPriority);
         return returnValue;
     }
@@ -227,23 +238,39 @@ public class DialogHint {
     }
 
     private void dismiss(int reason) {
-        DialogHintManager.$().dequeue(mOperate, reason);
-        mFlags |= FLAG_IS_DISMISSED;
+        if ((mFlags & FLAG_DEPRECATED) == 0) {
+            mFlags |= FLAG_IS_DISMISSED;
+            DialogHintManager.$().dequeue(mOperate, reason);
+        }
     }
 
     public boolean isShowing() {
-        return mUniversalDialog != null && mUniversalDialog.isShowing();
+        final Activity activity = mActivity.get();
+        final boolean dialogShowing = (mUniversalDialog != null && mUniversalDialog.isShowing()) || (mBizarreTypeDialog != null && mBizarreTypeDialog.isShowing());
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            return dialogShowing && activity != null && !activity.isFinishing() && !activity.isDestroyed();
+        } else {
+            return dialogShowing && activity != null && !activity.isFinishing();
+        }
     }
 
     private DialogHint(@NonNull BizarreTypeDialog dialog) {
-        this.mBizarreTypeDialog = dialog;
         this.mActivity = new WeakReference<Activity>(dialog.provideActivity());
+        if (dialog == null) {
+            mFlags |= FLAG_DEPRECATED;
+            return;
+        }
+        this.mBizarreTypeDialog = dialog;
         if (dialog instanceof AutoPriorityProvider)
             this.mPriority = ((AutoPriorityProvider) dialog).providePriority();
     }
 
     private DialogHint(DialogConfig.Type type, Activity activity, String message, String sureText, HintAction sureAction, String cancelText, HintAction cancelAction) {
         this.mActivity = new WeakReference<Activity>(activity);
+        if (type == null || activity == null || message == null) {
+            mFlags |= FLAG_DEPRECATED;
+            return;
+        }
         recordParams(activity, type, sureAction, cancelAction);
         buildViews(activity, message, sureText, cancelText, type);
     }
@@ -263,6 +290,7 @@ public class DialogHint {
         mUniversalDialog.setContentView(R.layout.dialog_layout);
         mUniversalDialog.setCancelable(type.config.cancelable);
         mUniversalDialog.setCanceledOnTouchOutside(type.config.cancelableTouchOutside);
+        final View universalDialog_ll_root = mUniversalDialog.findViewById(R.id.universalDialog_ll_root);
         final TextView messageView = (TextView) mUniversalDialog.findViewById(R.id.universalDialog_btv_content);
         final TextView cancelButton = (TextView) mUniversalDialog.findViewById(R.id.universalDialog_btv_leftButton);
         final TextView sureButton = (TextView) mUniversalDialog.findViewById(R.id.universalDialog_btv_rightButton);
@@ -280,6 +308,7 @@ public class DialogHint {
             cancelButton.setVisibility(View.GONE);
             cancelButton.setOnClickListener(null);
         }
+        universalDialog_ll_root.addOnAttachStateChangeListener(mAttachStateChangelistener);
         Window window = mUniversalDialog.getWindow();
         if (window != null) {
             WindowManager.LayoutParams layoutParams = window.getAttributes();

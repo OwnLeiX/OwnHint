@@ -38,6 +38,7 @@ final public class ImmersiveHint {
     private static final int FLAG_REPLACE_WAITING = 1 << 4;
     private static final int FLAG_IS_FINISHED = 1 << 5;
     private static final int FLAG_SYSTEM_CANCELED = 1 << 6;
+    private static final int FLAG_DEPRECATED = 1 << 7;
 
     private static volatile int mStatusHeight = -1;
     private static volatile WeakReference<ViewGroup> mFanciedParent;
@@ -208,28 +209,37 @@ final public class ImmersiveHint {
     }
 
     private ImmersiveHint(@NonNull ImmersiveConfig.Type type, @NonNull Activity activity, @NonNull String message, @Nullable String actionText, HintAction action) {
+        if (type == null || activity == null || message == null) {
+            mFlags |= FLAG_DEPRECATED;
+            return;
+        }
         recordParams(activity, type, action);
         buildViews(activity, message, actionText, type);
     }
 
     public void show() {
-        show(mType.config.showDuration);
+        if ((mFlags & FLAG_DEPRECATED) == 0)
+            show(mType.config.showDuration);
     }
 
     public void show(final long duration) {
-        ImmersiveHintManager.$().enqueue(mOperate, duration, mPriority);
+        if ((mFlags & FLAG_DEPRECATED) == 0)
+            ImmersiveHintManager.$().enqueue(mOperate, duration, mPriority);
     }
 
     public void dismiss() {
-        dismiss(ImmersiveConfig.DismissReason.REASON_ACTIVE);
+        if ((mFlags & FLAG_DEPRECATED) == 0)
+            dismiss(ImmersiveConfig.DismissReason.REASON_ACTIVE);
     }
 
     private void dismiss(final int reason) {
-        ImmersiveHintManager.$().dequeue(mOperate, reason);
+        if ((mFlags & FLAG_DEPRECATED) == 0)
+            ImmersiveHintManager.$().dequeue(mOperate, reason);
     }
 
     public ImmersiveHint withIcon(boolean show) {
-        mView.mIconView.setVisibility(show ? View.VISIBLE : View.GONE);
+        if ((mFlags & FLAG_DEPRECATED) == 0)
+            mView.mIconView.setVisibility(show ? View.VISIBLE : View.GONE);
         return this;
     }
 
@@ -239,55 +249,66 @@ final public class ImmersiveHint {
     }
 
     public ImmersiveHint redefineIconDrawable(@DrawableRes int resId) {
-        mView.mIconView.setImageResource(resId);
+        if ((mFlags & FLAG_DEPRECATED) == 0)
+            mView.mIconView.setImageResource(resId);
         return this;
     }
 
     public ImmersiveHint redefineIconSize(int radius) {
-        ViewGroup.LayoutParams params = mView.mIconView.getLayoutParams();
-        params.width = radius;
-        params.height = radius;
-        mView.mIconView.setLayoutParams(params);
+        if ((mFlags & FLAG_DEPRECATED) == 0) {
+            ViewGroup.LayoutParams params = mView.mIconView.getLayoutParams();
+            params.width = radius;
+            params.height = radius;
+            mView.mIconView.setLayoutParams(params);
+        }
         return this;
     }
 
     public ImmersiveHint redefineBackgroundColor(@ColorInt int color) {
-        mView.setBackgroundColor(color);
+        if ((mFlags & FLAG_DEPRECATED) == 0)
+            mView.setBackgroundColor(color);
         return this;
     }
 
     public ImmersiveHint redefineBackgroundDrawable(@DrawableRes int resId) {
-        mView.setBackgroundResource(resId);
+        if ((mFlags & FLAG_DEPRECATED) == 0)
+            mView.setBackgroundResource(resId);
         return this;
     }
 
     public ImmersiveHint redefineMessageTextSize(int size) {
-        mView.mMessageView.setTextSize(size);
+        if ((mFlags & FLAG_DEPRECATED) == 0)
+            mView.mMessageView.setTextSize(size);
         return this;
     }
 
     public ImmersiveHint redefineMessageTextColor(@ColorInt int color) {
-        mView.mMessageView.setTextColor(color);
+        if ((mFlags & FLAG_DEPRECATED) == 0)
+            mView.mMessageView.setTextColor(color);
         return this;
     }
 
     public ImmersiveHint redefineActionTextSize(int size) {
-        mView.mActionView.setTextSize(size);
+        if ((mFlags & FLAG_DEPRECATED) == 0)
+            mView.mActionView.setTextSize(size);
         return this;
     }
 
     public ImmersiveHint redefineActionTextColor(@ColorInt int color) {
-        mView.mActionView.setTextColor(color);
+        if ((mFlags & FLAG_DEPRECATED) == 0)
+            mView.mActionView.setTextColor(color);
         return this;
     }
 
     public ImmersiveHint redefineActionBackgroundDrawable(@DrawableRes int resId) {
-        mView.mActionView.setBackgroundResource(resId);
+        if ((mFlags & FLAG_DEPRECATED) == 0)
+            mView.mActionView.setBackgroundResource(resId);
         return this;
     }
 
     public ImmersiveHint redefineTransmissionTouchEvent(boolean transmission) {
-        mView.setClickable(!transmission);
+        if ((mFlags & FLAG_DEPRECATED) == 0)
+            mView.setClickable(!transmission);
         return this;
     }
 
