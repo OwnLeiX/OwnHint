@@ -207,12 +207,16 @@ public class DialogHint {
     public DialogHint redefineCancelable(boolean cancelable) {
         if (mUniversalDialog != null)
             mUniversalDialog.setCancelable(cancelable);
+        if (mBizarreTypeDialog != null && mBizarreTypeDialog instanceof RedefinableDialog)
+            ((RedefinableDialog) mBizarreTypeDialog).redefineCancelable(cancelable);
         return this;
     }
 
     public DialogHint redefineCancelableOutsideTouch(boolean cancelable) {
         if (mUniversalDialog != null)
             mUniversalDialog.setCanceledOnTouchOutside(cancelable);
+        if (mBizarreTypeDialog != null && mBizarreTypeDialog instanceof RedefinableDialog)
+            ((RedefinableDialog) mBizarreTypeDialog).redefineCancelableOutsideTouch(cancelable);
         return this;
     }
 
@@ -258,21 +262,21 @@ public class DialogHint {
         this.mActivity = new WeakReference<Activity>(dialog.provideActivity());
         if (dialog == null) {
             mFlags |= FLAG_DEPRECATED;
-            return;
+        } else {
+            this.mBizarreTypeDialog = dialog;
+            if (dialog instanceof AutoPriorityProvider)
+                this.mPriority = ((AutoPriorityProvider) dialog).providePriority();
         }
-        this.mBizarreTypeDialog = dialog;
-        if (dialog instanceof AutoPriorityProvider)
-            this.mPriority = ((AutoPriorityProvider) dialog).providePriority();
     }
 
     private DialogHint(DialogConfig.Type type, Activity activity, String message, String sureText, HintAction sureAction, String cancelText, HintAction cancelAction) {
         this.mActivity = new WeakReference<Activity>(activity);
         if (type == null || activity == null || message == null) {
             mFlags |= FLAG_DEPRECATED;
-            return;
+        } else {
+            recordParams(activity, type, sureAction, cancelAction);
+            buildViews(activity, message, sureText, cancelText, type);
         }
-        recordParams(activity, type, sureAction, cancelAction);
-        buildViews(activity, message, sureText, cancelText, type);
     }
 
     private void recordParams(Activity activity, DialogConfig.Type type, HintAction sureAction, HintAction cancelAction) {
@@ -344,5 +348,11 @@ public class DialogHint {
     public interface AutoPriorityProvider {
         @DialogPriority
         int providePriority();
+    }
+
+    public interface RedefinableDialog {
+        void redefineCancelable(boolean cancelable);
+
+        void redefineCancelableOutsideTouch(boolean cancelable);
     }
 }
