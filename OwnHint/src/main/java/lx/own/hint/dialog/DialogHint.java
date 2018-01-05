@@ -106,12 +106,13 @@ public class DialogHint {
     private final WeakReference<Activity> mActivity;
     private final View.OnClickListener mOnClickListener;
     private final View.OnAttachStateChangeListener mAttachStateChangelistener;
-    private DialogInterface.OnCancelListener mExtraCancelListener;
+    private final DialogInterface.OnCancelListener mCancelListener;
     private int mFlags;
     private int mPriority;
-    private HintAction mSureAction, mCancelAction;
     private Dialog mUniversalDialog;
     private BizarreTypeDialog mBizarreTypeDialog;
+    private HintAction mSureAction, mCancelAction;
+    private DialogInterface.OnCancelListener mExtraCancelListener;
 
     {
         mPriority = DialogConfig.Priority.NORMAL;
@@ -119,7 +120,7 @@ public class DialogHint {
             @Override
             public void show() {
                 Activity activity = mActivity.get();
-                if (activity != null && !activity.isFinishing()) {
+                if (activity != null && !activity.isFinishing() && (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1 || !activity.isDestroyed())) {
                     if (mUniversalDialog != null && !mUniversalDialog.isShowing())
                         mUniversalDialog.show();
                     if (mBizarreTypeDialog != null && !mBizarreTypeDialog.isShowing())
@@ -184,6 +185,14 @@ public class DialogHint {
                 }
             }
         };
+        mCancelListener = new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                dismiss(DialogConfig.DismissReason.REASON_ACTION);
+                if (mExtraCancelListener != null)
+                    mExtraCancelListener.onCancel(dialog);
+            }
+        };
     }
 
     public DialogHint priority(@DialogPriority int priority) {
@@ -220,9 +229,8 @@ public class DialogHint {
         return this;
     }
 
-    public DialogHint extraSetOutsideCancelListener(DialogInterface.OnCancelListener listener) {
-        if (mUniversalDialog != null)
-            mUniversalDialog.setOnCancelListener(listener);
+    public DialogHint extraSetCancelListener(DialogInterface.OnCancelListener listener) {
+        mExtraCancelListener = listener;
         return this;
     }
 
@@ -252,7 +260,7 @@ public class DialogHint {
         final Activity activity = mActivity.get();
         final boolean dialogShowing = (mUniversalDialog != null && mUniversalDialog.isShowing()) || (mBizarreTypeDialog != null && mBizarreTypeDialog.isShowing());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            return dialogShowing && activity != null && !activity.isFinishing() && !activity.isDestroyed();
+            return dialogShowing && activity != null && !activity.isDestroyed();
         } else {
             return dialogShowing && activity != null && !activity.isFinishing();
         }
@@ -294,6 +302,7 @@ public class DialogHint {
         mUniversalDialog.setContentView(R.layout.dialog_layout);
         mUniversalDialog.setCancelable(type.config.cancelable);
         mUniversalDialog.setCanceledOnTouchOutside(type.config.cancelableTouchOutside);
+        mUniversalDialog.setOnCancelListener(mCancelListener);
         final View universalDialog_ll_root = mUniversalDialog.findViewById(R.id.universalDialog_ll_root);
         final TextView messageView = (TextView) mUniversalDialog.findViewById(R.id.universalDialog_btv_content);
         final TextView cancelButton = (TextView) mUniversalDialog.findViewById(R.id.universalDialog_btv_leftButton);
