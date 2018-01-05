@@ -68,6 +68,10 @@ public class DialogHint {
         DialogHintManager.$().hideBelowPriority(priority);
     }
 
+    public static void hideOwnDialog(Activity activity) {
+        DialogHintManager.$().hideOwnDialog(activity);
+    }
+
     private static boolean isActivityRunning(@Nullable Activity activity) {
         return activity != null && (activity.hasWindowFocus() || !activity.isFinishing());
     }
@@ -153,6 +157,11 @@ public class DialogHint {
             @Override
             public boolean isShowing() {
                 return DialogHint.this.isShowing();
+            }
+
+            @Override
+            public Activity provideActivity() {
+                return mActivity.get();
             }
         };
         mOnClickListener = new View.OnClickListener() {

@@ -1,5 +1,6 @@
 package lx.own.hint.dialog;
 
+import android.app.Activity;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -92,6 +93,11 @@ public class DialogHintManager {
             cancelOperate(mCurrentRecorder, DialogConfig.DismissReason.REASON_ACTIVE);
     }
 
+    synchronized void hideOwnDialog(Activity activity) {
+        if (mCurrentRecorder != null && mCurrentRecorder.get().provideActivity() == activity)
+            cancelOperate(mCurrentRecorder, DialogConfig.DismissReason.REASON_ACTIVE);
+    }
+
     private class OperateRecorder {
         private final DialogHintManager.OperateInterface operate;
         private final int priority;
@@ -116,5 +122,7 @@ public class DialogHintManager {
         void hide(int reason);
 
         boolean isShowing();
+
+        Activity provideActivity();
     }
 }
