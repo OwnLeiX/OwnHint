@@ -32,6 +32,7 @@ final public class ImmersiveHintManager {
     private final int MSG_SHOW = -1;
     private final int MSG_DISMISS = -2;
     private final int MSG_TIME_OUT = -3;
+    private final int MSG_DISMISS_MISMATCHED = -4;
     private final Handler mHandler;
     private volatile OperateRecorder mCurrentRecorder;
     private final LinkedBlockingQueue<OperateRecorder> mRankSSPriorRecorders, mRankSPriorRecorders,
@@ -47,6 +48,8 @@ final public class ImmersiveHintManager {
                     ((OperateRecorder) msg.obj).operate.hide(msg.arg1);
                 } else if (msg.what == MSG_TIME_OUT) {
                     processOperateTimeout((OperateRecorder) msg.obj);
+                } else if (msg.what == MSG_DISMISS_MISMATCHED) {
+                    ((OperateInterface) msg.obj).hide(msg.arg1);
                 }
             }
         };
@@ -94,6 +97,8 @@ final public class ImmersiveHintManager {
             returnValue = removeInQueue(operate, mRankSPriorRecorders)
                     || removeInQueue(operate, mRankAPriorRecorders)
                     || removeInQueue(operate, mRankBPriorRecorders);
+            if (!returnValue)
+                mHandler.sendMessage(Message.obtain(mHandler, MSG_DISMISS_MISMATCHED, reason, 0, operate));
         }
         return returnValue;
     }
