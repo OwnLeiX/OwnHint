@@ -13,13 +13,13 @@ import java.util.concurrent.LinkedBlockingQueue;
  * <b> </b><br/>
  *
  * @author LeiXun
- *         Created on 2017/10/11.
+ * Created on 2017/10/11.
  */
 
-final public class ImmersiveHintManager {
+final class ImmersiveHintManager {
     private static ImmersiveHintManager mInstance;
 
-    public static ImmersiveHintManager $() {
+    static ImmersiveHintManager $() {
         if (mInstance == null) {
             synchronized (ImmersiveHintManager.class) {
                 if (mInstance == null)
@@ -63,7 +63,7 @@ final public class ImmersiveHintManager {
     private ImmersiveHintManager() {
     }
 
-    public ImmersiveHintManager configure(@NonNull ImmersiveConfig.Type type, @NonNull HintTypeConfig config) {
+    ImmersiveHintManager configure(@NonNull ImmersiveConfig.Type type, @NonNull HintTypeConfig config) {
         type.custom(config);
         return this;
     }

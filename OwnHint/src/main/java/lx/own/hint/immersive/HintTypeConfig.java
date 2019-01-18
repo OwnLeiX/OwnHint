@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.support.annotation.ColorInt;
 import android.support.annotation.DrawableRes;
 import android.view.Gravity;
+import android.view.animation.Interpolator;
 
 import lx.own.hint.GravityConfig;
 
@@ -11,7 +12,7 @@ import lx.own.hint.GravityConfig;
  * <b> </b><br/>
  *
  * @author LeiXun
- *         Created on 2017/10/11.
+ * Created on 2017/10/11.
  */
 
 public class HintTypeConfig {
@@ -43,6 +44,7 @@ public class HintTypeConfig {
     //other
     long showDuration = 2000L;
     long animDuration = 500L;
+    Interpolator showInterpolator, dismissInterpolator;
 
     OverallModelSupporter overallModelSupporter;
 
@@ -148,6 +150,16 @@ public class HintTypeConfig {
 
     final public HintTypeConfig transmissionTouchEvent(boolean transmissionTouchEvent) {
         this.transmissionTouchEvent = transmissionTouchEvent;
+        return this;
+    }
+
+    final public HintTypeConfig setShowInterpolator(Interpolator interpolator) {
+        this.showInterpolator = interpolator;
+        return this;
+    }
+
+    final public HintTypeConfig setDismissInterpolator(Interpolator interpolator) {
+        this.dismissInterpolator = interpolator;
         return this;
     }
 

@@ -6,13 +6,13 @@ import android.os.Bundle;
 
 import lx.own.hint.immersive.HintTypeConfig;
 import lx.own.hint.immersive.ImmersiveConfig;
-import lx.own.hint.immersive.ImmersiveHintManager;
+import lx.own.hint.immersive.ImmersiveHint;
 
 /**
  * <p> </p><br/>
  *
  * @author Lx
- *         Create on 14/10/2017.
+ * Create on 14/10/2017.
  */
 
 public class BaseApplication extends Application {
@@ -65,8 +65,7 @@ public class BaseApplication extends Application {
             }
         };
         HintTypeConfig customConfig = new HintTypeConfig().overallModel(SUPPORTER);
-        ImmersiveHintManager.$()
-                .configure(ImmersiveConfig.Type.Hint, customConfig)
-                .configure(ImmersiveConfig.Type.Warning, customConfig);
+        ImmersiveHint.configure(ImmersiveConfig.Type.Hint, customConfig);
+        ImmersiveHint.configure(ImmersiveConfig.Type.Warning, customConfig);
     }
 }

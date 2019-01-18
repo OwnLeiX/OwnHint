@@ -26,7 +26,7 @@ import lx.own.hint.R;
  * <p>沉浸式提示</p><br/>
  *
  * @author Lx
- *         Create on 10/10/2017.
+ * Create on 10/10/2017.
  */
 
 final public class ImmersiveHint {
@@ -42,6 +42,10 @@ final public class ImmersiveHint {
 
     private static volatile int mStatusHeight = -1;
     private static volatile WeakReference<ViewGroup> mFanciedParent;
+
+    public static void configure(@NonNull ImmersiveConfig.Type type, @NonNull HintTypeConfig config) {
+        ImmersiveHintManager.$().configure(type, config);
+    }
 
     public static ImmersiveHint make(@NonNull ImmersiveConfig.Type type, @NonNull Activity activity, @StringRes int messageRes) {
         return make(type, activity, messageRes, -1, null);
@@ -421,6 +425,7 @@ final public class ImmersiveHint {
         mView.setTranslationY(-mView.getMeasuredHeight());
         mLayInAnim = ObjectAnimator.ofFloat(mView, "translationY", mView.getTranslationY(), 0f);
         mLayInAnim.setDuration(mType.config.animDuration);
+        mLayInAnim.setInterpolator(mType.config.showInterpolator);
         mLayInAnim.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
@@ -462,6 +467,7 @@ final public class ImmersiveHint {
             return;
         mLayOutAnim = ObjectAnimator.ofFloat(mView, "translationY", 0f, -mView.getHeight());
         mLayOutAnim.setDuration(mType.config.animDuration);
+        mLayOutAnim.setInterpolator(mType.config.dismissInterpolator);
         mLayOutAnim.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
