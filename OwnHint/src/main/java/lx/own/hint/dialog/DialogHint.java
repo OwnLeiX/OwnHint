@@ -24,7 +24,7 @@ import lx.own.hint.R;
  * <b> </b><br/>
  *
  * @author LeiXun
- *         Created on 2017/11/7.
+ * Created on 2017/11/7.
  */
 
 public class DialogHint {
@@ -35,6 +35,10 @@ public class DialogHint {
     private static int mScreenWidth = -1;
     private static int mHorizontalPadding = -1;
     private static int mUniversalWidth = -1;
+
+    public static void configure(@NonNull DialogConfig.Type type, @NonNull DialogTypeConfig config) {
+        DialogHintManager.$().configure(type, config);
+    }
 
     public static DialogHint make(@NonNull BizarreTypeDialog dialog) {
         return new DialogHint(dialog);
@@ -313,20 +317,53 @@ public class DialogHint {
         mUniversalDialog.setCanceledOnTouchOutside(type.config.cancelableTouchOutside);
         mUniversalDialog.setOnCancelListener(mCancelListener);
         final View universalDialog_ll_root = mUniversalDialog.findViewById(R.id.universalDialog_ll_root);
+        if (type.config.dialogBackgroundResId != DialogTypeConfig.NO_CONFIG)
+            universalDialog_ll_root.setBackgroundResource(type.config.dialogBackgroundResId);
+
         final TextView messageView = (TextView) mUniversalDialog.findViewById(R.id.universalDialog_btv_content);
+        if (type.config.contentAppearance != DialogTypeConfig.NO_CONFIG)
+            messageView.setTextAppearance(activity, type.config.contentAppearance);
+
         final TextView cancelButton = (TextView) mUniversalDialog.findViewById(R.id.universalDialog_btv_leftButton);
+        if (type.config.cancelButtonBackgroundResId != DialogTypeConfig.NO_CONFIG)
+            cancelButton.setBackgroundResource(type.config.cancelButtonBackgroundResId);
+        if (type.config.cancelButtonAppearance != DialogTypeConfig.NO_CONFIG)
+            cancelButton.setTextAppearance(activity, type.config.cancelButtonAppearance);
+
         final TextView sureButton = (TextView) mUniversalDialog.findViewById(R.id.universalDialog_btv_rightButton);
-        final View dividerView = mUniversalDialog.findViewById(R.id.universalDialog_v_buttonDivider);
+        if (type.config.sureButtonBackgroundResId != DialogTypeConfig.NO_CONFIG)
+            sureButton.setBackgroundResource(type.config.sureButtonBackgroundResId);
+        if (type.config.sureButtonAppearance != DialogTypeConfig.NO_CONFIG)
+            sureButton.setTextAppearance(activity, type.config.sureButtonAppearance);
+
+        if (type.config.titleAppearance != DialogTypeConfig.NO_CONFIG) {
+            final TextView title = (TextView) mUniversalDialog.findViewById(R.id.universalDialog_btv_title);
+            title.setTextAppearance(activity, type.config.titleAppearance);
+        }
+
+        final View buttonDivider = mUniversalDialog.findViewById(R.id.universalDialog_v_buttonDivider);
+        final View contentDivider = mUniversalDialog.findViewById(R.id.universalDialog_v_contentDivider);
+        if (type.config.hasContentDivider) {
+            contentDivider.setVisibility(View.VISIBLE);
+            contentDivider.setBackgroundColor(type.config.dividerColor);
+        } else {
+            contentDivider.setVisibility(View.GONE);
+        }
         messageView.setText(message);
         sureButton.setText(sureText);
         sureButton.setOnClickListener(mOnClickListener);
         if (!TextUtils.isEmpty(cancelText)) {
-            dividerView.setVisibility(View.VISIBLE);
+            if (type.config.hasButtonDivider) {
+                buttonDivider.setVisibility(View.VISIBLE);
+                buttonDivider.setBackgroundColor(type.config.dividerColor);
+            } else {
+                buttonDivider.setVisibility(View.GONE);
+            }
             cancelButton.setVisibility(View.VISIBLE);
             cancelButton.setText(cancelText);
             cancelButton.setOnClickListener(mOnClickListener);
         } else {
-            dividerView.setVisibility(View.GONE);
+            buttonDivider.setVisibility(View.GONE);
             cancelButton.setVisibility(View.GONE);
             cancelButton.setOnClickListener(null);
         }

@@ -11,10 +11,10 @@ import android.support.annotation.Nullable;
  *         Created on 2017/11/7.
  */
 
-public class DialogHintManager {
+final class DialogHintManager {
     private static DialogHintManager mInstance;
 
-    public static DialogHintManager $() {
+    static DialogHintManager $() {
         if (mInstance == null) {
             synchronized (DialogHintManager.class) {
                 if (mInstance == null)
@@ -29,7 +29,7 @@ public class DialogHintManager {
     private DialogHintManager() {
     }
 
-    public DialogHintManager configure(@NonNull DialogConfig.Type type, @NonNull DialogTypeConfig config) {
+    DialogHintManager configure(@NonNull DialogConfig.Type type, @NonNull DialogTypeConfig config) {
         type.custom(config);
         return this;
     }
