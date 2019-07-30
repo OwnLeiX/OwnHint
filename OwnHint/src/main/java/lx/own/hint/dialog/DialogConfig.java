@@ -1,6 +1,6 @@
 package lx.own.hint.dialog;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /**
  * <b> </b><br/>
@@ -38,5 +38,6 @@ public interface DialogConfig {
         int EASY = 100;
         int CHICKEN = 0;
         int LOADING = -1;
+        int SPECIAL_LOADING = -2;
     }
 }

@@ -1,12 +1,13 @@
 package lx.own.example;
 
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 
-import lx.own.hint.immersive.ImmersiveHint;
+import androidx.appcompat.app.AppCompatActivity;
+
 import lx.own.hint.immersive.ImmersiveConfig;
+import lx.own.hint.immersive.ImmersiveHint;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 

@@ -1,6 +1,6 @@
 package lx.own.hint.dialog;
 
-import android.support.annotation.IntDef;
+import androidx.annotation.IntDef;
 
 /**
  * <p> </p><br/>

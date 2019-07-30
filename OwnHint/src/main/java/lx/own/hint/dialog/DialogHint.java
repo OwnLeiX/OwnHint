@@ -4,9 +4,6 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Build;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.StringRes;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -14,6 +11,10 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 
 import java.lang.ref.WeakReference;
 
@@ -36,42 +37,55 @@ public class DialogHint {
     private static int mHorizontalPadding = -1;
     private static int mUniversalWidth = -1;
 
-    public static void configure(@NonNull DialogConfig.Type type, @NonNull DialogTypeConfig config) {
-        DialogHintManager.$().configure(type, config);
-    }
-
+    /**
+     * 构建异形对话框提示的方法
+     *
+     * @param dialog 实现了{@link BizarreTypeDialog}接口的异形对话框
+     * @see AutoPriorityProvider 自动提供对话框优先级的接口，使{@link DialogHint#priority(int)}自动化
+     * @see RedefinableDialog 可以重定义的对话框，使异形对话框支持{@link DialogHint#redefineCancelable(boolean)} {@link DialogHint#redefineCancelableOutsideTouch(boolean)}
+     * @see Able2ListenCancelDialog 可以监听取消的对话框，使异形对话框支持{@link DialogHint#extraSetOutsideCancelListener(DialogInterface.OnCancelListener)}
+     */
     public static DialogHint make(@NonNull BizarreTypeDialog dialog) {
         return new DialogHint(dialog);
     }
 
     public static DialogHint make(@NonNull DialogConfig.Type type, @NonNull Activity activity, @NonNull String message, @StringRes int sureText, @Nullable HintAction sureAction) {
-        return make(type, activity, message, activity.getString(sureText), sureAction, null, null);
+        return new DialogHint(type, activity, message, getSafeString(activity, sureText), sureAction, null, null);
     }
 
     public static DialogHint make(@NonNull DialogConfig.Type type, @NonNull Activity activity, @StringRes int message, @StringRes int sureText, @Nullable HintAction sureAction) {
-        return make(type, activity, activity.getString(message), activity.getString(sureText), sureAction, null, null);
-    }
-
-    public static DialogHint make(@NonNull DialogConfig.Type type, @NonNull Activity activity, @NonNull String message, @NonNull String sureText, @Nullable HintAction sureAction) {
-        return make(type, activity, message, sureText, sureAction, null, null);
+        return new DialogHint(type, activity, getSafeString(activity, message), getSafeString(activity, sureText), sureAction, null, null);
     }
 
     public static DialogHint make(@NonNull DialogConfig.Type type, @NonNull Activity activity, @NonNull String message, @StringRes int sureText, @Nullable HintAction sureAction, @StringRes int cancelText, @Nullable HintAction cancelAction) {
-        return new DialogHint(type, activity, message, activity.getString(sureText), sureAction, activity.getString(cancelText), cancelAction);
+        return new DialogHint(type, activity, message, getSafeString(activity, sureText), sureAction, getSafeString(activity, cancelText), cancelAction);
     }
 
     public static DialogHint make(@NonNull DialogConfig.Type type, @NonNull Activity activity, @StringRes int message, @StringRes int sureText, @Nullable HintAction sureAction, @StringRes int cancelText, @Nullable HintAction cancelAction) {
-        return new DialogHint(type, activity, activity.getString(message), activity.getString(sureText), sureAction, activity.getString(cancelText), cancelAction);
+        return new DialogHint(type, activity, getSafeString(activity, message), getSafeString(activity, sureText), sureAction, getSafeString(activity, cancelText), cancelAction);
     }
 
-    public static DialogHint make(@NonNull DialogConfig.Type type, @NonNull Activity activity, @NonNull String message, @Nullable String sureText, @Nullable HintAction sureAction, @NonNull String cancelText, @Nullable HintAction cancelAction) {
-        return new DialogHint(type, activity, message, sureText, sureAction, cancelText, cancelAction);
-    }
-
+    /**
+     * 关闭优先级小于等于参数的所有对话框
+     * - 一般情况下不需要调用
+     * 当使用{@link DialogConfig.Priority#SPECIAL_LOADING}时，需要手动调用来关闭对话框
+     *
+     * @param priority 优先级
+     */
     public static void hideBelowPriority(@DialogPriority int priority) {
         DialogHintManager.$().hideBelowPriority(priority);
     }
 
+    /**
+     * 关闭属于参数Activity的所有对话框
+     * - 一般情况下不需要调用
+     * <p>
+     * 特别说明：{@link DialogConfig.Type#Cancelable} {@link DialogConfig.Type#UnCancelable}
+     * 在点击Action后[默认]会自动关闭对话框，不需要调用此方法来关闭
+     * 如果调用了{@link DialogHint#redefineAutoActionDismiss(boolean)}或新增了其他的{@link DialogConfig.Type}，才需要考虑是否需要手动调用此方法来关闭对话框
+     *
+     * @param activity 对话框依赖的Activity
+     */
     public static void hideOwnDialog(Activity activity) {
         DialogHintManager.$().hideOwnDialog(activity);
     }
@@ -110,6 +124,18 @@ public class DialogHint {
         return mUniversalWidth;
     }
 
+    private static String getSafeString(Activity act, int resId) {
+        String returnValue = null;
+        if (act != null) {
+            try {
+                returnValue = act.getResources().getString(resId);
+            } catch (Exception ignore) {
+
+            }
+        }
+        return returnValue;
+    }
+
     private final DialogHintManager.OperateInterface mOperate;
     private final WeakReference<Activity> mActivity;
     private final View.OnClickListener mOnClickListener;
@@ -121,18 +147,24 @@ public class DialogHint {
     private BizarreTypeDialog mBizarreTypeDialog;
     private HintAction mSureAction, mCancelAction;
     private DialogInterface.OnCancelListener mExtraCancelListener;
+    private String mRecorderKey;
 
     {
         mPriority = DialogConfig.Priority.NORMAL;
         mOperate = new DialogHintManager.OperateInterface() {
             @Override
-            public void show() {
+            public void show(String recorderKey) {
+                mRecorderKey = recorderKey;
                 Activity activity = mActivity.get();
                 if (activity != null && !activity.isFinishing() && (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1 || !activity.isDestroyed())) {
-                    if (mUniversalDialog != null && !mUniversalDialog.isShowing())
-                        mUniversalDialog.show();
-                    if (mBizarreTypeDialog != null && !mBizarreTypeDialog.isShowing())
-                        mBizarreTypeDialog.show();
+                    try {
+                        if (mUniversalDialog != null && !mUniversalDialog.isShowing())
+                            mUniversalDialog.show();
+                        if (mBizarreTypeDialog != null && !mBizarreTypeDialog.isShowing())
+                            mBizarreTypeDialog.show();
+                    } catch (Exception ignore) {
+                        //有些BizarreTypeDialog是DialogFragment，在Activity#onSavedInstanceState后show会抛出异常，这里也没办法判断Activity是否onSaveInstanceState,所以强行try catch
+                    }
                 } else {
                     dismiss(DialogConfig.DismissReason.REASON_DETACHED);
                 }
@@ -141,20 +173,24 @@ public class DialogHint {
             @Override
             public void hide(int reason) {
                 Activity activity = mActivity.get();
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                    if (activity != null && !activity.isDestroyed()) {
-                        if (mUniversalDialog != null && mUniversalDialog.isShowing())
-                            mUniversalDialog.dismiss();
-                        if (mBizarreTypeDialog != null && mBizarreTypeDialog.isShowing())
-                            mBizarreTypeDialog.dismiss();
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                        if (activity != null && !activity.isDestroyed()) {
+                            if (mUniversalDialog != null && mUniversalDialog.isShowing())
+                                mUniversalDialog.dismiss();
+                            if (mBizarreTypeDialog != null && mBizarreTypeDialog.isShowing())
+                                mBizarreTypeDialog.dismiss();
+                        }
+                    } else {
+                        if (activity != null && !activity.isFinishing()) {
+                            if (mUniversalDialog != null && mUniversalDialog.isShowing())
+                                mUniversalDialog.dismiss();
+                            if (mBizarreTypeDialog != null && mBizarreTypeDialog.isShowing())
+                                mBizarreTypeDialog.dismiss();
+                        }
                     }
-                } else {
-                    if (activity != null && !activity.isFinishing()) {
-                        if (mUniversalDialog != null && mUniversalDialog.isShowing())
-                            mUniversalDialog.dismiss();
-                        if (mBizarreTypeDialog != null && mBizarreTypeDialog.isShowing())
-                            mBizarreTypeDialog.dismiss();
-                    }
+                } catch (Exception ignore) {
+                    //防止有些BizarreTypeDialog是DialogFragment，dismiss并没有调用DialogFragment#dismissAllowingStateLoss,在Activity#onSavedInstanceState后dismiss会抛出异常,所以强行try catch
                 }
             }
 
@@ -216,7 +252,7 @@ public class DialogHint {
     public DialogHint title(String title) {
         if (!TextUtils.isEmpty(title) && mUniversalDialog != null) {
             try {
-                TextView titleView = (TextView) mUniversalDialog.findViewById(R.id.universalDialog_btv_title);
+                TextView titleView = mUniversalDialog.findViewById(R.id.universalDialog_btv_title);
                 titleView.setText(title);
                 titleView.setVisibility(View.VISIBLE);
             } catch (ClassCastException ignore) {
@@ -242,8 +278,17 @@ public class DialogHint {
         return this;
     }
 
-    public DialogHint extraSetCancelListener(DialogInterface.OnCancelListener listener) {
+    public DialogHint extraSetOutsideCancelListener(DialogInterface.OnCancelListener listener) {
         mExtraCancelListener = listener;
+        return this;
+    }
+
+    public DialogHint redefineAutoActionDismiss(boolean dismiss) {
+        if (dismiss) {
+            mFlags |= FLAG_AUTO_DISMISS;
+        } else {
+            mFlags &= ~FLAG_AUTO_DISMISS;
+        }
         return this;
     }
 
@@ -265,7 +310,7 @@ public class DialogHint {
     private void dismiss(int reason) {
         if ((mFlags & FLAG_DEPRECATED) == 0) {
             mFlags |= FLAG_IS_DISMISSED;
-            DialogHintManager.$().dequeue(mOperate, reason);
+            DialogHintManager.$().dequeue(mRecorderKey, mOperate, reason);
         }
     }
 
@@ -280,18 +325,21 @@ public class DialogHint {
     }
 
     private DialogHint(@NonNull BizarreTypeDialog dialog) {
-        this.mActivity = new WeakReference<Activity>(dialog.provideActivity());
+        this.mActivity = new WeakReference<>(dialog.provideActivity());
+        //noinspection ConstantConditions
         if (dialog == null) {
             mFlags |= FLAG_DEPRECATED;
         } else {
             this.mBizarreTypeDialog = dialog;
             if (dialog instanceof AutoPriorityProvider)
                 this.mPriority = ((AutoPriorityProvider) dialog).providePriority();
+            if (mBizarreTypeDialog instanceof Able2ListenCancelDialog)
+                ((Able2ListenCancelDialog) mBizarreTypeDialog).setOnCancelListener(mCancelListener);
         }
     }
 
     private DialogHint(DialogConfig.Type type, Activity activity, String message, String sureText, HintAction sureAction, String cancelText, HintAction cancelAction) {
-        this.mActivity = new WeakReference<Activity>(activity);
+        this.mActivity = new WeakReference<>(activity);
         if (type == null || activity == null || message == null) {
             mFlags |= FLAG_DEPRECATED;
         } else {
@@ -317,53 +365,20 @@ public class DialogHint {
         mUniversalDialog.setCanceledOnTouchOutside(type.config.cancelableTouchOutside);
         mUniversalDialog.setOnCancelListener(mCancelListener);
         final View universalDialog_ll_root = mUniversalDialog.findViewById(R.id.universalDialog_ll_root);
-        if (type.config.dialogBackgroundResId != DialogTypeConfig.NO_CONFIG)
-            universalDialog_ll_root.setBackgroundResource(type.config.dialogBackgroundResId);
-
-        final TextView messageView = (TextView) mUniversalDialog.findViewById(R.id.universalDialog_btv_content);
-        if (type.config.contentAppearance != DialogTypeConfig.NO_CONFIG)
-            messageView.setTextAppearance(activity, type.config.contentAppearance);
-
-        final TextView cancelButton = (TextView) mUniversalDialog.findViewById(R.id.universalDialog_btv_leftButton);
-        if (type.config.cancelButtonBackgroundResId != DialogTypeConfig.NO_CONFIG)
-            cancelButton.setBackgroundResource(type.config.cancelButtonBackgroundResId);
-        if (type.config.cancelButtonAppearance != DialogTypeConfig.NO_CONFIG)
-            cancelButton.setTextAppearance(activity, type.config.cancelButtonAppearance);
-
-        final TextView sureButton = (TextView) mUniversalDialog.findViewById(R.id.universalDialog_btv_rightButton);
-        if (type.config.sureButtonBackgroundResId != DialogTypeConfig.NO_CONFIG)
-            sureButton.setBackgroundResource(type.config.sureButtonBackgroundResId);
-        if (type.config.sureButtonAppearance != DialogTypeConfig.NO_CONFIG)
-            sureButton.setTextAppearance(activity, type.config.sureButtonAppearance);
-
-        if (type.config.titleAppearance != DialogTypeConfig.NO_CONFIG) {
-            final TextView title = (TextView) mUniversalDialog.findViewById(R.id.universalDialog_btv_title);
-            title.setTextAppearance(activity, type.config.titleAppearance);
-        }
-
-        final View buttonDivider = mUniversalDialog.findViewById(R.id.universalDialog_v_buttonDivider);
-        final View contentDivider = mUniversalDialog.findViewById(R.id.universalDialog_v_contentDivider);
-        if (type.config.hasContentDivider) {
-            contentDivider.setVisibility(View.VISIBLE);
-            contentDivider.setBackgroundColor(type.config.dividerColor);
-        } else {
-            contentDivider.setVisibility(View.GONE);
-        }
+        final TextView messageView = mUniversalDialog.findViewById(R.id.universalDialog_btv_content);
+        final TextView cancelButton = mUniversalDialog.findViewById(R.id.universalDialog_btv_leftButton);
+        final TextView sureButton = mUniversalDialog.findViewById(R.id.universalDialog_btv_rightButton);
+        final View dividerView = mUniversalDialog.findViewById(R.id.universalDialog_v_buttonDivider);
         messageView.setText(message);
         sureButton.setText(sureText);
         sureButton.setOnClickListener(mOnClickListener);
         if (!TextUtils.isEmpty(cancelText)) {
-            if (type.config.hasButtonDivider) {
-                buttonDivider.setVisibility(View.VISIBLE);
-                buttonDivider.setBackgroundColor(type.config.dividerColor);
-            } else {
-                buttonDivider.setVisibility(View.GONE);
-            }
+            dividerView.setVisibility(View.VISIBLE);
             cancelButton.setVisibility(View.VISIBLE);
             cancelButton.setText(cancelText);
             cancelButton.setOnClickListener(mOnClickListener);
         } else {
-            buttonDivider.setVisibility(View.GONE);
+            dividerView.setVisibility(View.GONE);
             cancelButton.setVisibility(View.GONE);
             cancelButton.setOnClickListener(null);
         }
@@ -405,9 +420,24 @@ public class DialogHint {
         int providePriority();
     }
 
+    /**
+     * 可重定义的Dialog接口，结合BizarreTypeDialog使用，使
+     * {@link DialogHint#redefineCancelable(boolean)}
+     * {@link DialogHint#redefineCancelableOutsideTouch(boolean)}
+     * 能影响到传入的{@link BizarreTypeDialog}
+     */
     public interface RedefinableDialog {
         void redefineCancelable(boolean cancelable);
 
         void redefineCancelableOutsideTouch(boolean cancelable);
+    }
+
+    /**
+     * 可额外设置CancelListener的Dialog接口，结合BizarreTypeDialog使用，使
+     * {@link DialogHint#extraSetOutsideCancelListener(DialogInterface.OnCancelListener)} (boolean)}
+     * 能影响到传入的{@link BizarreTypeDialog}
+     */
+    public interface Able2ListenCancelDialog {
+        void setOnCancelListener(DialogInterface.OnCancelListener listener);
     }
 }

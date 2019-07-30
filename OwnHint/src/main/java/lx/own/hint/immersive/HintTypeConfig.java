@@ -1,10 +1,11 @@
 package lx.own.hint.immersive;
 
 import android.app.Activity;
-import android.support.annotation.ColorInt;
-import android.support.annotation.DrawableRes;
 import android.view.Gravity;
 import android.view.animation.Interpolator;
+
+import androidx.annotation.ColorInt;
+import androidx.annotation.DrawableRes;
 
 import lx.own.hint.GravityConfig;
 

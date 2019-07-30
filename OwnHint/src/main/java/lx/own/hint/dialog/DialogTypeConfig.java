@@ -1,8 +1,8 @@
 package lx.own.hint.dialog;
 
-import android.support.annotation.ColorInt;
-import android.support.annotation.DrawableRes;
-import android.support.annotation.StyleRes;
+import androidx.annotation.ColorInt;
+import androidx.annotation.DrawableRes;
+import androidx.annotation.StyleRes;
 
 /**
  * <b> </b><br/>

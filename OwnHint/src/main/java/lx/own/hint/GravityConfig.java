@@ -1,7 +1,8 @@
 package lx.own.hint;
 
-import android.support.annotation.IntDef;
 import android.view.Gravity;
+
+import androidx.annotation.IntDef;
 
 /**
  * <p> </p><br/>

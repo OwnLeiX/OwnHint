@@ -1,6 +1,6 @@
 package lx.own.example;
 
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity;
 
 /**
  * <p> </p><br/>

@@ -1,6 +1,6 @@
 package lx.own.hint.immersive;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /**
  * <b> </b><br/>

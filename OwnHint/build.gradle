@@ -1,9 +1,45 @@
-apply plugin: 'com.android.library'
-
-android {
-    compileSdkVersion 28
+ext {
+    doBuild = true
 }
 
-dependencies {
-    api 'com.android.support:appcompat-v7:28.0.0'
+if (project.hasProperty("ext") && project.ext.doBuild) {
+    apply plugin: 'com.android.library'
+
+    dependencies {
+        api 'androidx.appcompat:appcompat:1.0.2'
+    }
+
+    android {
+        compileSdkVersion 28
+
+        defaultConfig {
+            minSdkVersion 14
+            versionCode 1
+            versionName "1.0"
+        }
+
+        //打包文件后-文件名处理
+        android.libraryVariants.all { variant ->
+            variant.outputs.all { output ->
+                if (variant.buildType.name == 'release') {
+                    def newAArName = "${project.name}-${defaultConfig.versionName}.aar"
+                    outputFileName = new File("../../../" + variant.name, newAArName)
+                } else {
+                    def newAArName = "${project.name}-${defaultConfig.versionName}-${variant.buildType.name}.aar"
+                    outputFileName = new File(newAArName)
+                }
+                //println("module.network >>> " + output.outputFile)
+            }
+        }
+    }
+
+    task releaseJar(type: Jar, dependsOn: 'build') {
+        //去掉不需要打包的目录和文件
+        exclude('test/', 'R.class')
+        //去掉R$开头的文件
+        exclude { it.name.startsWith('R$') }
+    }
+} else {
+    configurations.maybeCreate("default")
+    artifacts.add("default", file('release/ownHint1.0.aar'))
 }
